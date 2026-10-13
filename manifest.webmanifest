@@ -1,18 +1,26 @@
+
 {
-  "id": "./",
+  "id": "/",
   "name": "صافکاری منتظری",
   "short_name": "منتظری",
-  "description": "مدیریت تعمیرگاه و پیگیری وضعیت خودروهای صافکاری منتظری",
+  "description": "مدیریت صافکاری و پیگیری خودرو",
   "lang": "fa-IR",
   "dir": "rtl",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "any",
   "background_color": "#080d12",
   "theme_color": "#080d12",
   "icons": [
-    {"src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
