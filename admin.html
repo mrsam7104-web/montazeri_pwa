@@ -46,6 +46,8 @@
 <div class="fieldbox"><label for="color">رنگ خودرو</label><input class="field" id="color" placeholder="مثلاً سفید"></div>
 <div class="fieldbox full"><label for="notes">توضیحات اولیه / خواسته مشتری</label><textarea id="notes" rows="3" placeholder="شرح اولیه، قطعات تحویلی، نکات مهم..."></textarea></div></div><div class="form-actions"><button class="primary" type="submit">ذخیره پرونده</button><button class="secondary" type="button" id="cancelModal">انصراف</button></div><p class="note">اطلاعات این نسخه در حافظه همین مرورگر ذخیره می‌شود؛ برای استفاده چندنفره و پشتیبان‌گیری آنلاین باید به سرور و پایگاه داده متصل شود.</p></form></div></div>
 <div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
 <script>
 const stages=[
  {name:'پذیرش و ثبت اولیه',pct:0,desc:'ثبت پلاک، مشخصات مشتری و بررسی اولیه'},
@@ -140,8 +142,8 @@ function ensureTrackingCodes(){let changed=false;for(const car of cars){if(!/^\d
 render();
 async function initCloudAdmin(){
  const msg=$('cloudLoginMsg');
- if(!cloudConfigured()){msg.textContent='ابتدا فایل supabase-config.js را با Project URL و کلید عمومی پروژه تنظیم کن.';return}
- if(!window.supabase?.createClient){msg.textContent='کتابخانه اتصال بارگذاری نشد؛ اینترنت را بررسی و صفحه را دوباره باز کن.';return}
+ if(!cloudConfigured()){$('cloudLogin').style.display='flex';msg.textContent='فایل supabase-config.js تنظیم نیست یا بارگذاری نشده؛ آدرس و کلید عمومی Supabase را بررسی کن.';return}
+ if(!window.supabase?.createClient){$('cloudLogin').style.display='flex';msg.textContent='کتابخانه اتصال بارگذاری نشد؛ اینترنت را بررسی کن و صفحه را دوباره باز کن.';return}
  sb=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
  const {data:{session}}=await sb.auth.getSession();
  if(session){$('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();return}
@@ -160,7 +162,7 @@ $('cloudLoginForm').addEventListener('submit',async e=>{e.preventDefault();const
  if(error){msg.textContent='ورود انجام نشد. ایمیل/رمز و فعال بودن حساب مدیر را بررسی کن.';return}
  $('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();
 });
-initCloudAdmin();
+initCloudAdmin().catch(e=>{console.error(e);$('cloudLogin').style.display='flex';$('cloudLoginMsg').textContent='اتصال ابری شروع نشد؛ تنظیمات و اتصال اینترنت را بررسی کن.';});
 </script><script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
 <script>
 (function(){const gate=document.getElementById('adminPassGate');document.getElementById('adminPassForm').addEventListener('submit',function(e){e.preventDefault();if(document.getElementById('adminPassInput').value==='1523137'){gate.style.display='none';}else{document.getElementById('adminPassError').textContent='رمز واردشده صحیح نیست.';document.getElementById('adminPassInput').value='';}});})();
