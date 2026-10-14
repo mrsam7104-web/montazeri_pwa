@@ -69,5 +69,41 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+
+<script>
+async function askMONAI(message) {
+  const response = await fetch(
+    "https://mon-ai-api.mrsam7104.workers.dev",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: "تو MON AI، دستیار هوشمند سایت صافکاری منتظری هستی. فارسی، دوستانه، دقیق و مختصر پاسخ بده."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ]
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "خطا در ارتباط با هوش مصنوعی");
+  }
+
+  return data.choices?.[0]?.message?.content
+    || "پاسخی دریافت نشد.";
+}
+</script>
+
 </body>
 </html>
