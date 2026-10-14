@@ -33,6 +33,7 @@
 <section class="panel"><div class="panel-head"><h3>وضعیت خودروی انتخاب‌شده</h3><span class="pill">LIVE TRACK</span></div><div id="selectedDetails" class="empty">برای دیدن جزئیات، یک خودرو از جدول انتخاب کن.</div></section>
 <section class="panel"><div class="panel-head"><h3>خط زمانی تعمیر</h3><span class="pill">۰ تا ۱۰۰٪</span></div><div id="timeline" class="timeline"><div class="empty">ابتدا یک خودرو انتخاب کن.</div></div><div class="stage-controls"><select id="stageSelect" aria-label="مرحله خودرو"></select><button class="primary" id="setStage">ثبت مرحله</button></div><p class="note">با تغییر مرحله، درصد پیشرفت و وضعیت پرونده به‌روزرسانی می‌شود. مرحله «آماده تحویل» معادل ۱۰۰٪ است.</p></section>
 </aside></div>
+<section class="panel" style="margin-top:18px" id="smsPanel"><div class="panel-head"><h3>SMS · پیام آماده مشتری</h3><span class="pill">کپی پیام</span></div><p class="note" style="margin:0 0 12px">یک خودرو را از جدول انتخاب کن؛ متن پیام با پلاک و کد پیگیری همان پرونده آماده می‌شود.</p><textarea id="smsMessage" rows="6" readonly class="field" style="width:100%;line-height:1.9;resize:vertical" placeholder="ابتدا یک خودرو انتخاب کن."></textarea><div class="form-actions"><button class="primary" type="button" id="copySms">کپی متن پیامک</button></div></section>
 <section class="panel" style="margin-top:18px"><div class="panel-head"><h3>مشخصات خرابی و شرح کار</h3><button class="secondary" id="addDamage">＋ افزودن ردیف خرابی</button></div><div id="damageArea" class="table-wrap"><div class="empty">برای ثبت خرابی‌ها، یک خودرو انتخاب کن.</div></div><div class="form-actions"><button class="primary" id="saveDamage">ذخیره شرح خرابی‌ها</button></div></section>
 <div class="foot">MONT AZERI AUTO BODY REPAIR · ساخته‌شده برای مدیریت داخلی مجموعه</div>
 </div>
@@ -93,8 +94,24 @@ function render(){
  $('statProgress').textContent=fa(cars.length?Math.round(cars.reduce((a,c)=>a+stageOf(c).pct,0)/cars.length):0)+'٪';
  renderSelected();
 }
+function updateSmsMessage(c){
+ const box=$('smsMessage');if(!box)return;
+ if(!c){box.value='ابتدا یک خودرو از جدول انتخاب کن.';return}
+ box.value=`مالک خودروی ${c.plate||'—'}
+خودروی شما با موفقیت در سامانه صافکاری منتظری ثبت شد.
+کد پیگیری شما: ${c.trackingCode||'—'}
+برای مشاهده آخرین وضعیت تعمیر خودرو وارد شوید:
+https://safmtz.ir
+صافکاری منتظری`;
+}
+$('copySms').onclick=async()=>{
+ const box=$('smsMessage');if(!current()){toast('ابتدا یک خودرو انتخاب کن');return}
+ try{await navigator.clipboard.writeText(box.value);toast('متن پیامک کپی شد؛ برای مشتری بفرست')}
+ catch(e){box.focus();box.select();try{document.execCommand('copy');toast('متن پیامک کپی شد؛ برای مشتری بفرست')}catch(_){toast('متن را انتخاب و کپی کن')}}
+};
 function renderSelected(){
  const c=current();
+ updateSmsMessage(c);
  if(!c){$('selectedDetails').innerHTML='برای دیدن جزئیات، یک خودرو از جدول انتخاب کن.';$('timeline').innerHTML='<div class="empty">ابتدا یک خودرو انتخاب کن.</div>';$('damageArea').innerHTML='<div class="empty">برای ثبت خرابی‌ها، یک خودرو انتخاب کن.</div>';$('stageSelect').innerHTML=stages.map((s,i)=>`<option value="${i}">${s.name} · ${s.pct}٪</option>`).join('');return}
  let st=stageOf(c);
  $('selectedDetails').innerHTML=`<div class="vehicle-card"><small>پرونده فعال</small><h3>${escapeHTML(c.plate)}</h3><p>${escapeHTML(c.model||'خودرو')} ${c.color?' · '+escapeHTML(c.color):''}</p><p>کد پیگیری مشتری: <strong style="color:var(--cyan);letter-spacing:3px">${escapeHTML(c.trackingCode||'----')}</strong> <button class="mini-btn copy-code" data-code="${escapeHTML(c.trackingCode||'')}">کپی کد</button></p><p>تماس: ${escapeHTML(c.phone||'ثبت نشده')}</p><div class="progress-row"><span>${escapeHTML(st.name)}</span><b>${fa(st.pct)}٪</b></div><div class="progress"><div style="width:${st.pct}%"></div></div><p>${escapeHTML(c.notes||'توضیحات اولیه ثبت نشده')}</p><button class="mini-btn" id="editSelected" style="margin-top:8px">ویرایش اطلاعات</button></div>`;
