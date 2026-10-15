@@ -154,10 +154,19 @@ async function askMONAI(message) {
     if (!response.ok) throw new Error('GitHub API status ' + response.status);
 
     const data = await response.json();
-    const images = (data.tree || [])
-      .filter(item => item.type === 'blob' && imageExtensions.test(item.path))
-      .filter(item => !/\.png$/i.test(item.path))
+    const allFiles = (data.tree || []).filter(item => item.type === 'blob');
+    const paths = new Set(allFiles.map(item => item.path.toLowerCase()));
+    const images = allFiles
+      .filter(item => imageExtensions.test(item.path))
       .filter(item => !/icon/i.test(item.path.split('/').pop()))
+      // If a WebP copy exists, use it instead of downloading the heavier original.
+      .filter(item => {
+        if (/\.(?:jpe?g|png)$/i.test(item.path)) {
+          const webpPath = item.path.replace(/\.(?:jpe?g|png)$/i, '.webp').toLowerCase();
+          if (paths.has(webpPath)) return false;
+        }
+        return !/\.png$/i.test(item.path);
+      })
       .sort((a, b) => a.path.localeCompare(b.path));
 
     grid.replaceChildren();
@@ -181,6 +190,7 @@ async function askMONAI(message) {
       img.src = url;
       img.alt = item.path.split('/').pop();
       img.loading = 'lazy';
+      img.decoding = 'async';
 
       const caption = document.createElement('span');
       caption.textContent = item.path.split('/').pop();

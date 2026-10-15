@@ -1,0 +1,68 @@
+name: Convert gallery photos to WebP
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  convert-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install image converter
+        run: python -m pip install --upgrade Pillow
+
+      - name: Convert photos to WebP
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          extensions = {'.jpg', '.jpeg', '.png'}
+          ignored_dirs = {'.git', '.github', 'node_modules'}
+          converted = 0
+          for source in Path('.').rglob('*'):
+              if not source.is_file() or source.suffix.lower() not in extensions:
+                  continue
+              if any(part in ignored_dirs for part in source.parts):
+                  continue
+              if 'icon' in source.stem.lower():
+                  continue
+              target = source.with_suffix('.webp')
+              if target.exists() and target.stat().st_mtime >= source.stat().st_mtime:
+                  continue
+              try:
+                  with Image.open(source) as image:
+                      if image.mode not in ('RGB', 'RGBA'):
+                          image = image.convert('RGBA' if 'transparency' in image.info else 'RGB')
+                      image.save(target, 'WEBP', quality=82, method=6)
+                  converted += 1
+                  print(f'{source} -> {target}')
+              except Exception as error:
+                  print(f'Skipped {source}: {error}')
+          print(f'New/updated WebP files: {converted}')
+          PY
+
+      - name: Commit generated WebP files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Add optimized WebP image copies [skip ci]"
+            git push
+          else
+            echo "No new WebP files to commit."
+          fi
