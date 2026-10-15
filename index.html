@@ -59,6 +59,7 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 <main class="card">
 <img class="logo" src="/icon-192.png" alt="لوگوی صافکاری منتظری">
 <h1>صافکاری منتظری</h1>
+<p class="manager">با مدیریت محمود منتظری</p>
 <p>سامانه مدیریت صافکاری و پیگیری وضعیت خودرو</p>
 
 <nav class="links">
@@ -142,6 +143,7 @@ async function askMONAI(message) {
     const images = (data.tree || [])
       .filter(item => item.type === 'blob' && imageExtensions.test(item.path))
       .filter(item => !/\.png$/i.test(item.path))
+      .filter(item => !/icon/i.test(item.path.split('/').pop()))
       .sort((a, b) => a.path.localeCompare(b.path));
 
     grid.replaceChildren();
