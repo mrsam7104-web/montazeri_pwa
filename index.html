@@ -33,7 +33,6 @@ box-shadow:0 20px 70px #0006
 .logo{width:120px;height:120px;object-fit:contain;margin-bottom:12px}
 h1{font-size:25px;margin:8px 0;color:#13d8ef}
 p{color:#a9bbc3;line-height:1.9}
-.manager{margin:2px 0 12px;color:#13d8ef;font-size:14px;font-weight:bold;letter-spacing:.2px}
 .links{display:grid;gap:12px;margin-top:24px}
 a{
 display:block;text-decoration:none;color:#effbff;
@@ -44,6 +43,15 @@ a:first-child{background:#13d8ef;color:#071116;border-color:#13d8ef}
 a.mon-ai{background:linear-gradient(110deg,#101c22,#082a30);border:1px solid #13d8ef;color:#13d8ef;box-shadow:0 0 22px #13d8ef14}
 a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 .small{font-size:12px;color:#8ca0ac;margin-top:22px}
+.gallery{margin-top:24px;padding-top:20px;border-top:1px solid #26343e;text-align:right}
+.gallery h2{font-size:18px;color:#13d8ef;margin:0 0 8px}
+.gallery-intro{font-size:12px;margin:0 0 14px;color:#8ca0ac}
+.gallery-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.gallery-item{display:block;padding:0;border:1px solid #26343e;border-radius:12px;overflow:hidden;background:#091116;min-width:0}
+.gallery-item img{display:block;width:100%;height:145px;object-fit:cover}
+.gallery-item span{display:block;padding:8px;font-size:11px;color:#c9e2e8;overflow-wrap:anywhere}
+.gallery-message{font-size:12px;color:#8ca0ac;text-align:center;padding:14px 4px}
+@media(min-width:480px){.gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.gallery-item img{height:125px}}
 </style>
 </head>
 
@@ -51,7 +59,6 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 <main class="card">
 <img class="logo" src="/icon-192.png" alt="لوگوی صافکاری منتظری">
 <h1>صافکاری منتظری</h1>
-<p class="manager">با مدیریت محمود منتظری</p>
 <p>سامانه مدیریت صافکاری و پیگیری وضعیت خودرو</p>
 
 <nav class="links">
@@ -59,6 +66,14 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 <a href="/customer.html">صفحه پیگیری مشتری</a>
 <a class="mon-ai" href="/mon-ai.html">✦ ورود به MON AI — دستیار هوشمند</a>
 </nav>
+
+<section class="gallery" aria-labelledby="gallery-title">
+  <h2 id="gallery-title">گالری نمونه‌کارها</h2>
+  <p class="gallery-intro">تصاویر نمونه‌کارهای صافکاری منتظری</p>
+  <div class="gallery-grid" id="gallery-grid">
+    <div class="gallery-message">در حال بارگذاری تصاویر…</div>
+  </div>
+</section>
 
 <p class="small">برای نصب برنامه، سایت را با Chrome باز کنید و از منوی مرورگر گزینه نصب برنامه را بزنید.</p>
 </main>
@@ -105,6 +120,87 @@ async function askMONAI(message) {
   return data.choices?.[0]?.message?.content
     || "پاسخی دریافت نشد.";
 }
+</script>
+
+
+<script>
+(async function loadWorkGallery() {
+  const grid = document.getElementById('gallery-grid');
+  if (!grid) return;
+
+  // Public repository used by this GitHub Pages site.
+  const treeUrl = 'https://api.github.com/repos/mrsam7104-web/montazeri_pwa/git/trees/main?recursive=1';
+  const imageExtensions = /\.(?:jpe?g|jfif|webp|gif|avif|bmp|svg|tiff?)$/i;
+
+  try {
+    const response = await fetch(treeUrl, {
+      headers: { 'Accept': 'application/vnd.github+json' }
+    });
+    if (!response.ok) throw new Error('GitHub API status ' + response.status);
+
+    const data = await response.json();
+    const images = (data.tree || [])
+      .filter(item => item.type === 'blob' && imageExtensions.test(item.path))
+      .filter(item => !/\.png$/i.test(item.path))
+      .sort((a, b) => a.path.localeCompare(b.path));
+
+    grid.replaceChildren();
+
+    if (!images.length) {
+      const message = document.createElement('div');
+      message.className = 'gallery-message';
+      message.textContent = 'هنوز تصویری غیر از PNG در مخزن پیدا نشد.';
+      grid.appendChild(message);
+      return;
+    }
+
+    for (const item of images) {
+      const url = 'https://raw.githubusercontent.com/mrsam7104-web/montazeri_pwa/main/' +
+        item.path.split('/').map(encodeURIComponent).join('/');
+
+      const card = document.createElement('a');
+      card.className = 'gallery-item';
+      card.href = url;
+      card.target = '_blank';
+      card.rel = 'noopener noreferrer';
+
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = item.path.split('/').pop();
+      img.loading = 'lazy';
+
+      const caption = document.createElement('span');
+      caption.textContent = item.path.split('/').pop();
+
+      img.addEventListener('error', () => {
+        card.remove();
+        if (!grid.querySelector('.gallery-item')) {
+          const message = document.createElement('div');
+          message.className = 'gallery-message';
+          message.textContent = 'تصاویر بارگذاری نشدند؛ فرمت یا دسترسی مخزن را بررسی کن.';
+          grid.appendChild(message);
+        }
+      });
+
+      card.append(img, caption);
+      grid.appendChild(card);
+    }
+
+    if (data.truncated) {
+      const note = document.createElement('div');
+      note.className = 'gallery-message';
+      note.textContent = 'مخزن بزرگ است؛ ممکن است بعضی تصاویر در فهرست نمایش داده نشوند.';
+      grid.appendChild(note);
+    }
+  } catch (error) {
+    console.error('MON gallery:', error);
+    grid.replaceChildren();
+    const message = document.createElement('div');
+    message.className = 'gallery-message';
+    message.textContent = 'بارگذاری گالری ناموفق بود؛ مطمئن شو مخزن GitHub عمومی است و اتصال اینترنت برقرار است.';
+    grid.appendChild(message);
+  }
+})();
 </script>
 
 </body>
