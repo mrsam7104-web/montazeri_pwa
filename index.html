@@ -161,6 +161,121 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
     color: #24d6c5;
     font-size: 13px;
 }
+    /* MONTAZERI RACING GAME */
+.race-game {
+    margin: 28px 0;
+    padding: 16px;
+    background: linear-gradient(160deg, #102526, #071314);
+    border: 1px solid #20d6c5;
+    border-radius: 20px;
+    color: #efffff;
+    text-align: center;
+    overflow: hidden;
+    box-shadow: 0 8px 30px #0005;
+}
+
+.race-game h2 {
+    color: #20d6c5;
+    margin: 5px 0 8px;
+}
+
+.race-game p {
+    font-size: 13px;
+    color: #b6d1d0;
+}
+
+.race-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.race-score {
+    color: #20d6c5;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.race-canvas-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    margin: auto;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid #315354;
+    background: #202a2b;
+}
+
+#raceCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: pan-y;
+}
+
+.race-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    background: #061718dd;
+    backdrop-filter: blur(4px);
+}
+
+.race-overlay.hidden {
+    display: none;
+}
+
+.race-btn {
+    padding: 12px 22px;
+    border: 0;
+    border-radius: 12px;
+    background: #20d6c5;
+    color: #062322;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.race-controls {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 12px;
+}
+
+.race-controls button {
+    width: 90px;
+    height: 48px;
+    border: 1px solid #20d6c5;
+    border-radius: 13px;
+    background: #123738;
+    color: white;
+    font-size: 23px;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.race-controls button:active {
+    background: #20d6c5;
+    color: #062322;
+}
+
+.race-prize {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: #153b2c;
+    color: #a8ffcb;
+    font-weight: bold;
+}
 </style>
 </head>
 
@@ -232,7 +347,37 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
     <div class="gallery-message">در حال بارگذاری تصاویر…</div>
   </div>
 </section>
+<section class="race-game" id="raceGame">
+    <h2>🏁 چالش ماشین‌بازی منتظری</h2>
+    <p>از ماشین‌ها جاخالی بده و ۱۰۰۰ امتیاز بگیر تا برنده تخفیف ۴۰٪ بشی!</p>
 
+    <div class="race-hud">
+        <span>امتیاز: <span class="race-score" id="raceScore">0</span></span>
+        <span>رکورد: <span id="raceBest">0</span></span>
+        <button class="race-btn" id="raceSound" type="button">🔊 صدا</button>
+    </div>
+
+    <div class="race-canvas-wrap">
+        <canvas id="raceCanvas" width="360" height="540"></canvas>
+
+        <div class="race-overlay" id="raceOverlay">
+            <h3 id="raceTitle">آماده‌ای راننده؟</h3>
+            <p id="raceMessage">سه لاین، موانع زیاد؛ ببین چند مرده حلاجی!</p>
+            <button class="race-btn" id="raceStart" type="button">
+                شروع مسابقه 🚗
+            </button>
+        </div>
+    </div>
+
+    <div class="race-controls">
+        <button id="raceLeft" type="button" aria-label="حرکت به چپ">◀</button>
+        <button id="raceRight" type="button" aria-label="حرکت به راست">▶</button>
+    </div>
+
+    <div class="race-prize" id="racePrize">
+        🏆 جایزه: تخفیف ۴۰٪ با کسب ۱۰۰۰ امتیاز
+    </div>
+</section>
 <p class="small">برای نصب برنامه، سایت را با Chrome باز کنید و از منوی مرورگر گزینه نصب برنامه را بزنید.</p>
 </main>
 
@@ -429,5 +574,323 @@ async function askMONAI(message) {
     });
 })();
 </script>
+    <script>
+(() => {
+    const canvas = document.getElementById("raceCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const scoreEl = document.getElementById("raceScore");
+    const bestEl = document.getElementById("raceBest");
+    const overlay = document.getElementById("raceOverlay");
+    const titleEl = document.getElementById("raceTitle");
+    const messageEl = document.getElementById("raceMessage");
+    const startBtn = document.getElementById("raceStart");
+    const soundBtn = document.getElementById("raceSound");
+    const prizeEl = document.getElementById("racePrize");
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const laneW = W / 3;
+
+    let lane = 1;
+    let obstacles = [];
+    let score = 0;
+    let best = 0;
+    let running = false;
+    let soundOn = true;
+    let audio = null;
+    let lastTime = 0;
+    let spawnTimer = 0;
+    let roadOffset = 0;
+    let animationId = 0;
+    let lastSound = 0;
+
+    try {
+        best = Number(localStorage.getItem("montazeriRaceBest")) || 0;
+    } catch (_) {}
+    bestEl.textContent = best;
+
+    function playTone(freq, duration, type = "sine", volume = 0.035) {
+        if (!soundOn) return;
+
+        try {
+            audio = audio || new (window.AudioContext ||
+                window.webkitAudioContext)();
+
+            if (audio.state === "suspended") audio.resume();
+
+            const osc = audio.createOscillator();
+            const gain = audio.createGain();
+
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audio.currentTime);
+            gain.gain.setValueAtTime(volume, audio.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+                0.001, audio.currentTime + duration
+            );
+
+            osc.connect(gain);
+            gain.connect(audio.destination);
+            osc.start();
+            osc.stop(audio.currentTime + duration);
+        } catch (_) {}
+    }
+
+    function drawCar(x, y, color, player = false) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        // Tires
+        ctx.fillStyle = "#101516";
+        ctx.fillRect(-17, 8, 6, 19);
+        ctx.fillRect(11, 8, 6, 19);
+        ctx.fillRect(-17, -22, 6, 19);
+        ctx.fillRect(11, -22, 6, 19);
+
+        // Body
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(-14, -27, 28, 56, 7);
+        ctx.fill();
+
+        // Windows
+        ctx.fillStyle = "#172d32";
+        ctx.beginPath();
+        ctx.roundRect(-10, -15, 20, 15, 4);
+        ctx.fill();
+
+        ctx.fillStyle = "#6eece3";
+        ctx.fillRect(-9, 18, 5, 4);
+        ctx.fillRect(4, 18, 5, 4);
+
+        if (player) {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(-3, -25, 6, 3);
+        }
+
+        ctx.restore();
+    }
+
+    function drawRoad() {
+        ctx.fillStyle = "#252e30";
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.fillStyle = "#173d32";
+        ctx.fillRect(0, 0, 8, H);
+        ctx.fillRect(W - 8, 0, 8, H);
+
+        ctx.strokeStyle = "#d5e5df";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([26, 24]);
+        ctx.lineDashOffset = -roadOffset;
+
+        for (let i = 1; i <= 2; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * laneW, 0);
+            ctx.lineTo(i * laneW, H);
+            ctx.stroke();
+        }
+
+        ctx.setLineDash([]);
+    }
+
+    function drawScene() {
+        drawRoad();
+
+        obstacles.forEach(o => {
+            drawCar(
+                laneW * o.lane + laneW / 2,
+                o.y,
+                o.color
+            );
+        });
+
+        drawCar(
+            laneW * lane + laneW / 2,
+            H - 75,
+            "#20d6c5",
+            true
+        );
+    }
+
+    function move(direction) {
+        if (!running) return;
+
+        const next = Math.max(0, Math.min(2, lane + direction));
+
+        if (next !== lane) {
+            lane = next;
+            playTone(450, 0.06, "triangle", 0.025);
+        }
+    }
+
+    document.getElementById("raceLeft").addEventListener(
+        "click", () => move(-1)
+    );
+
+    document.getElementById("raceRight").addEventListener(
+        "click", () => move(1)
+    );
+
+    document.addEventListener("keydown", e => {
+        if (!document.getElementById("raceGame").contains(
+            document.activeElement
+        ) && !running) return;
+
+        if (["ArrowLeft", "ArrowRight", " "].includes(e.key)) {
+            e.preventDefault();
+        }
+
+        if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+            move(-1);
+        }
+        if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+            move(1);
+        }
+    });
+
+    // Swipe controls for mobile
+    let touchX = null;
+
+    canvas.addEventListener("touchstart", e => {
+        touchX = e.changedTouches[0].clientX;
+    }, { passive: true });
+
+    canvas.addEventListener("touchend", e => {
+        if (touchX === null) return;
+        const dx = e.changedTouches[0].clientX - touchX;
+
+        if (Math.abs(dx) > 25) move(dx > 0 ? 1 : -1);
+        touchX = null;
+    }, { passive: true });
+
+    soundBtn.addEventListener("click", () => {
+        soundOn = !soundOn;
+        soundBtn.textContent = soundOn ? "🔊 صدا" : "🔇 بی‌صدا";
+
+        if (soundOn) playTone(600, 0.1);
+    });
+
+    function finishGame(won) {
+        running = false;
+        cancelAnimationFrame(animationId);
+
+        titleEl.textContent = won ? "🏆 قهرمان شدی!" : "💥 تصادف کردی!";
+        messageEl.textContent = won
+            ? "به ۱۰۰۰ امتیاز رسیدی! برای دریافت تخفیف با صافکاری تماس بگیر."
+            : "امتیازت: " + Math.floor(score) +
+              " — دوباره تلاش کن و رکوردت رو بشکن!";
+
+        startBtn.textContent = won ? "بازی دوباره" : "تلاش دوباره";
+        overlay.classList.remove("hidden");
+
+        if (won) {
+            prizeEl.textContent =
+                "🎉 امتیاز ۱۰۰۰ ثبت شد! برای تأیید تخفیف ۴۰٪ با مجموعه تماس بگیر.";
+            playTone(880, 0.18);
+            setTimeout(() => playTone(1100, 0.22), 180);
+        } else {
+            playTone(130, 0.35, "sawtooth", 0.06);
+        }
+    }
+
+    function update(time) {
+        if (!running) return;
+
+        const dt = Math.min((time - lastTime) / 1000 || 0, 0.04);
+        lastTime = time;
+
+        score += dt * 40;
+        scoreEl.textContent = Math.floor(score);
+
+        if (score >= 1000) {
+            score = 1000;
+            scoreEl.textContent = "1000";
+            finishGame(true);
+            drawScene();
+            return;
+        }
+
+        const speed = 190 + Math.min(score * 0.12, 140);
+        roadOffset = (roadOffset + speed * dt) % 50;
+        spawnTimer += dt;
+
+        const spawnInterval = Math.max(0.52, 1.05 - score / 1800);
+
+        if (spawnTimer >= spawnInterval) {
+            spawnTimer = 0;
+
+            const newLane = Math.floor(Math.random() * 3);
+            obstacles.push({
+                lane: newLane,
+                y: -35,
+                color: ["#e75d52", "#e9b84b", "#8b83f6"][
+                    Math.floor(Math.random() * 3)
+                ]
+            });
+        }
+
+        obstacles.forEach(o => o.y += speed * dt);
+
+        // Collision detection
+        const playerY = H - 75;
+
+        for (const o of obstacles) {
+            if (
+                o.lane === lane &&
+                Math.abs(o.y - playerY) < 42
+            ) {
+                finishGame(false);
+                drawScene();
+                return;
+            }
+        }
+
+        obstacles = obstacles.filter(o => o.y < H + 45);
+
+        // Save best score
+        if (Math.floor(score) > best) {
+            best = Math.floor(score);
+            bestEl.textContent = best;
+
+            try {
+                localStorage.setItem("montazeriRaceBest", best);
+            } catch (_) {}
+        }
+
+        if (soundOn && time - lastSound > 1100) {
+            playTone(90, 0.06, "sawtooth", 0.009);
+            lastSound = time;
+        }
+
+        drawScene();
+        animationId = requestAnimationFrame(update);
+    }
+
+    function startGame() {
+        cancelAnimationFrame(animationId);
+
+        lane = 1;
+        obstacles = [];
+        score = 0;
+        spawnTimer = 0;
+        roadOffset = 0;
+        lastTime = performance.now();
+        running = true;
+
+        scoreEl.textContent = "0";
+        prizeEl.textContent = "🏆 جایزه: تخفیف ۴۰٪ با کسب ۱۰۰۰ امتیاز";
+        overlay.classList.add("hidden");
+
+        playTone(500, 0.1);
+        drawScene();
+        animationId = requestAnimationFrame(update);
+    }
+
+    startBtn.addEventListener("click", startGame);
+
+    drawScene();
+})();
+    </script>
 </body>
 </html>
