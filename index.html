@@ -349,7 +349,7 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 </section>
 <section class="race-game" id="raceGame">
     <h2>🏁 چالش ماشین‌بازی منتظری</h2>
-    <p>از ماشین‌ها جاخالی بده و ۱۰۰۰ امتیاز بگیر تا برنده تخفیف ۴۰٪ بشی!</p>
+    <p>از ماشین‌ها جاخالی بده و ۳۰۰۰ امتیاز بگیر تا برنده تخفیف ۲۰٪ بشی!</p>
 
     <div class="race-hud">
         <span>امتیاز: <span class="race-score" id="raceScore">0</span></span>
@@ -375,7 +375,7 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
     </div>
 
     <div class="race-prize" id="racePrize">
-        🏆 جایزه: تخفیف ۴۰٪ با کسب ۱۰۰۰ امتیاز
+        🏆 جایزه: تخفیف ۲۰٪ با کسب ۳۰۰۰ امتیاز
     </div>
 </section>
 <p class="small">برای نصب برنامه، سایت را با Chrome باز کنید و از منوی مرورگر گزینه نصب برنامه را بزنید.</p>
@@ -777,7 +777,7 @@ async function askMONAI(message) {
 
         titleEl.textContent = won ? "🏆 قهرمان شدی!" : "💥 تصادف کردی!";
         messageEl.textContent = won
-            ? "به ۱۰۰۰ امتیاز رسیدی! برای دریافت تخفیف با صافکاری تماس بگیر."
+            ? "به ۳۰۰۰ امتیاز رسیدی! برای دریافت تخفیف با صافکاری تماس بگیر."
             : "امتیازت: " + Math.floor(score) +
               " — دوباره تلاش کن و رکوردت رو بشکن!";
 
@@ -786,7 +786,7 @@ async function askMONAI(message) {
 
         if (won) {
             prizeEl.textContent =
-                "🎉 امتیاز ۱۰۰۰ ثبت شد! برای تأیید تخفیف ۴۰٪ با مجموعه تماس بگیر.";
+                "🎉 امتیاز ۳۰۰۰ ثبت شد! برای تأیید تخفیف ۲۰٪ با مجموعه تماس بگیر.";
             playTone(880, 0.18);
             setTimeout(() => playTone(1100, 0.22), 180);
         } else {
@@ -803,7 +803,7 @@ async function askMONAI(message) {
         score += dt * 40;
         scoreEl.textContent = Math.floor(score);
 
-        if (score >= 1000) {
+        if (score >= 3000) {
     scoreEl.textContent = Math.floor(score);
 
     if (!localStorage.getItem("montazeriRacePrize")) {
@@ -892,7 +892,7 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
         running = true;
 
         scoreEl.textContent = "0";
-        prizeEl.textContent = "🏆 جایزه: تخفیف ۲۰٪ با کسب ۱۰۰۰ امتیاز";
+        prizeEl.textContent = "🏆 جایزه: تخفیف ۲۰٪ با کسب ۳۰۰۰ امتیاز";
         overlay.classList.add("hidden");
 
         playTone(500, 0.1);
