@@ -804,23 +804,36 @@ async function askMONAI(message) {
         scoreEl.textContent = Math.floor(score);
 
         if (score >= 1000) {
-            score = 1000;
-            scoreEl.textContent = "1000";
-            finishGame(true);
-            drawScene();
-            return;
-        }
+    scoreEl.textContent = Math.floor(score);
 
-        const speed = 190 + Math.min(score * 0.12, 140);
+    if (!localStorage.getItem("montazeriRacePrize")) {
+        localStorage.setItem("montazeriRacePrize", "earned");
+        prizeEl.textContent =
+            "🏆 تبریک! جایزه تخفیف ۲۰٪ رو گرفتی؛ بازی ادامه داره ، از صفحه اسکرین‌شات بگیر و به ما نشون بده!";
+        playTone(880, 0.18);
+
+        setTimeout(() => playTone(1100, 0.22), 180);
+    }
+}
+
+        const speed = 300 + Math.min(score * 0.35, 420);
         roadOffset = (roadOffset + speed * dt) % 50;
         spawnTimer += dt;
 
-        const spawnInterval = Math.max(0.52, 1.05 - score / 1800);
+        const spawnInterval = Math.max(0.24, 0.72 - score / 2200);
 
         if (spawnTimer >= spawnInterval) {
             spawnTimer = 0;
 
-            const newLane = Math.floor(Math.random() * 3);
+            let newLane = Math.floor(Math.random() * 3);
+
+if (Math.random() < 0.35 && obstacles.length > 0) {
+    const previousLane = obstacles[obstacles.length - 1].lane;
+
+    if (Math.random() < 0.5) {
+        newLane = previousLane;
+    }
+}
             obstacles.push({
                 lane: newLane,
                 y: -35,
@@ -879,7 +892,7 @@ async function askMONAI(message) {
         running = true;
 
         scoreEl.textContent = "0";
-        prizeEl.textContent = "🏆 جایزه: تخفیف ۴۰٪ با کسب ۱۰۰۰ امتیاز";
+        prizeEl.textContent = "🏆 جایزه: تخفیف ۲۰٪ با کسب ۱۰۰۰ امتیاز";
         overlay.classList.add("hidden");
 
         playTone(500, 0.1);
