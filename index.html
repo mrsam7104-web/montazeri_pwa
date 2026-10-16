@@ -725,11 +725,11 @@ async function askMONAI(message) {
     }
 
     document.getElementById("raceLeft").addEventListener(
-        "click", () => move(-1)
+        "click", () => move(1)
     );
 
     document.getElementById("raceRight").addEventListener(
-        "click", () => move(1)
+        "click", () => move(-1)
     );
 
     document.addEventListener("keydown", e => {
