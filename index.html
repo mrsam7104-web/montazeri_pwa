@@ -65,6 +65,102 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 .gallery-item span{display:block;padding:8px;font-size:11px;color:#c9e2e8;overflow-wrap:anywhere}
 .gallery-message{font-size:12px;color:#8ca0ac;text-align:center;padding:14px 4px}
 @media(min-width:480px){.gallery-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.gallery-item img{height:125px}}
+/* Instagram */
+.instagram-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px auto;
+    padding: 11px 18px;
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid #d946ef;
+    border-radius: 14px;
+    background: linear-gradient(120deg, #833ab4, #fd1d1d, #fcb045);
+    transition: transform .25s, box-shadow .25s;
+}
+
+.instagram-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px #d946ef55;
+}
+
+/* Contact button */
+.contact-box {
+    margin: 18px 0;
+    text-align: center;
+}
+
+.contact-toggle {
+    width: 100%;
+    padding: 14px 18px;
+    border: 1px solid #24d6c5;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #123e42, #087e80);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform .25s, box-shadow .25s;
+}
+
+.contact-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px #20d6c544;
+}
+
+/* Animated phone list */
+.contact-list {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition:
+        grid-template-rows .4s ease,
+        opacity .3s ease,
+        transform .4s ease,
+        margin .4s ease;
+    margin-top: 0;
+}
+
+.contact-list-inner {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.contact-box.open .contact-list {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transform: translateY(0);
+    margin-top: 12px;
+}
+
+.contact-number {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 9px;
+    padding: 13px 15px;
+    border: 1px solid #24484a;
+    border-radius: 12px;
+    background: #102426;
+    color: #eaffff;
+    text-decoration: none;
+    direction: rtl;
+    transition: background .2s, border-color .2s;
+}
+
+.contact-number:hover {
+    background: #173638;
+    border-color: #24d6c5;
+}
+
+.contact-number span {
+    color: #24d6c5;
+    font-size: 13px;
+}
 </style>
 </head>
 
@@ -80,7 +176,55 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 <a href="/customer.html">صفحه پیگیری مشتری</a>
 <a class="mon-ai" href="/mon-ai.html">✦ ورود به MON AI — دستیار هوشمند</a>
 </nav>
+<!-- Instagram -->
+<a
+    class="instagram-link"
+    href="https://www.instagram.com/safkari_montazeri/"
+    target="_blank"
+    rel="noopener noreferrer"
+>
+    📸 پیج اینستاگرام صافکاری منتظری
+</a>
 
+<!-- Contact buttons -->
+<div class="contact-box" id="contactBox">
+    <button
+        class="contact-toggle"
+        id="contactToggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="contactList"
+    >
+        ☎️ تماس با استادکاران
+        <span id="contactArrow">⌄</span>
+    </button>
+
+    <div class="contact-list" id="contactList" aria-hidden="true">
+        <div class="contact-list-inner">
+
+            <a class="contact-number" href="tel:09131523137">
+                <strong>استادکار ۱</strong>
+                <span>09131523137　📞 تماس</span>
+            </a>
+
+            <a class="contact-number" href="tel:09140755436">
+                <strong>استادکار ۲</strong>
+                <span>09140755436　📞 تماس</span>
+            </a>
+
+            <a class="contact-number" href="tel:09163941334">
+                <strong>استادکار ۳</strong>
+                <span>09163941334　📞 تماس</span>
+            </a>
+
+            <a class="contact-number" href="tel:09912927817">
+                <strong>استادکار ۴</strong>
+                <span>09912927817　📞 تماس</span>
+            </a>
+
+        </div>
+    </div>
+</div>
 <section class="gallery" aria-labelledby="gallery-title">
   <h2 id="gallery-title">گالری نمونه‌کارها</h2>
   <p class="gallery-intro">تصاویر نمونه‌کارهای صافکاری منتظری</p>
@@ -264,6 +408,26 @@ async function askMONAI(message) {
   largeImage.addEventListener('contextmenu', (event) => event.preventDefault());
 })();
 </script>
+<script>
+(() => {
+    const box = document.getElementById('contactBox');
+    const button = document.getElementById('contactToggle');
+    const list = document.getElementById('contactList');
+    const arrow = document.getElementById('contactArrow');
 
+    if (!box || !button || !list || !arrow) return;
+
+    button.addEventListener('click', () => {
+        const isOpen = box.classList.toggle('open');
+
+        button.setAttribute('aria-expanded', String(isOpen));
+        list.setAttribute('aria-hidden', String(!isOpen));
+        arrow.textContent = isOpen ? '⌃' : '⌄';
+        button.firstChild.textContent = isOpen
+            ? '☎️ بستن شماره‌ها '
+            : '☎️ تماس با استادکاران ';
+    });
+})();
+</script>
 </body>
 </html>
