@@ -276,6 +276,30 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
     color: #a8ffcb;
     font-weight: bold;
 }
+
+/* Discount wheel registration */
+.discount-wheel{margin:26px 0;padding:20px 14px;border:1px solid #20d6c5;border-radius:20px;background:linear-gradient(155deg,#102526,#071314);text-align:center;overflow:hidden;color:#efffff}
+.discount-wheel h2{color:#20d6c5;margin:4px 0 8px;font-size:20px}
+.discount-wheel .wheel-note{font-size:13px;color:#b6d1d0;margin:0 0 14px;line-height:1.8}
+.wheel-form{display:grid;gap:10px;text-align:right;margin:14px auto;max-width:480px}
+.wheel-form label{display:grid;gap:6px;color:#d9f7f4;font-size:13px}
+.wheel-form input{width:100%;min-width:0;padding:12px;border-radius:10px;border:1px solid #315354;background:#081719;color:#efffff;font:inherit;outline:none}
+.wheel-form input:focus{border-color:#20d6c5;box-shadow:0 0 0 2px #20d6c522}
+.wheel-plate-parts{display:grid;grid-template-columns:1fr .72fr 1.2fr .85fr;gap:7px;direction:ltr}
+.wheel-plate-parts input{text-align:center;padding:12px 3px;font-size:16px;font-weight:bold}
+.wheel-plate-parts .wheel-letter{font-size:19px}
+.wheel-canvas-wrap{position:relative;width:min(100%,360px);aspect-ratio:1;margin:18px auto 4px}
+#wheelCanvas{display:block;width:100%;height:100%}
+.wheel-pointer{position:absolute;z-index:2;top:-3px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:28px solid #f7fbff;filter:drop-shadow(0 3px 4px #0009)}
+.wheel-btn{width:100%;padding:13px 18px;border:0;border-radius:12px;background:#20d6c5;color:#062322;font:inherit;font-weight:bold;cursor:pointer}
+.wheel-btn:disabled{opacity:.55;cursor:wait}
+.wheel-status{min-height:24px;margin:10px 0 0;color:#c9e2e8;font-size:13px;line-height:1.8;overflow-wrap:anywhere}
+.wheel-status.success{color:#a8ffcb}.wheel-status.error{color:#ffb4b4}
+.wheel-coupon{display:none;margin-top:10px;padding:13px;border:1px dashed #20d6c5;border-radius:12px;background:#0b2925;color:#a8ffcb}
+.wheel-coupon strong{display:block;font-size:21px;letter-spacing:2px;margin:7px}
+.wheel-privacy{font-size:11px;color:#8ca0ac;margin:10px auto 0;max-width:480px;line-height:1.8}
+@media(max-width:380px){.wheel-plate-parts{gap:4px}.wheel-plate-parts input{font-size:14px;padding:11px 1px}}
+
 </style>
 </head>
 
@@ -376,6 +400,35 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
         🏆 جایزه: تخفیف ۲۰٪ با کسب ۳۰۰۰ امتیاز
     </div>
 </section>
+
+<section class="discount-wheel" id="discountWheel" aria-labelledby="wheelTitle">
+  <h2 id="wheelTitle">🎁 گردونه شانس صافکاری منتظری</h2>
+  <p class="wheel-note">مشخصاتت رو ثبت کن و شانس دریافت تخفیف خدمات صافکاری رو امتحان کن.</p>
+  <form class="wheel-form" id="wheelForm">
+    <label>نام و نام خانوادگی
+      <input id="wheelName" name="full_name" type="text" autocomplete="name" maxlength="100" required placeholder="مثلاً علی رضایی">
+    </label>
+    <label>شماره پلاک خودرو</label>
+    <div class="wheel-plate-parts" dir="ltr" aria-label="شماره پلاک خودرو">
+      <input id="wheelPlateTwo" inputmode="numeric" maxlength="2" required aria-label="دو رقم اول پلاک" placeholder="۱۲">
+      <input id="wheelPlateLetter" class="wheel-letter" maxlength="1" required aria-label="حرف پلاک" placeholder="ب">
+      <input id="wheelPlateThree" inputmode="numeric" maxlength="3" required aria-label="سه رقم پلاک" placeholder="۳۴۵">
+      <input id="wheelPlateCity" inputmode="numeric" maxlength="2" required aria-label="کد شهرستان" placeholder="۶۷">
+    </div>
+    <label>شماره تماس
+      <input id="wheelPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required placeholder="09xxxxxxxxx">
+    </label>
+    <button class="wheel-btn" id="wheelSpin" type="submit">ثبت اطلاعات و چرخاندن گردونه</button>
+  </form>
+  <div class="wheel-canvas-wrap" aria-label="گردونه تخفیف">
+    <div class="wheel-pointer" aria-hidden="true"></div>
+    <canvas id="wheelCanvas" width="440" height="440" aria-label="گردونه شامل تخفیف‌های مختلف و پوچ"></canvas>
+  </div>
+  <p class="wheel-status" id="wheelStatus" role="status" aria-live="polite">هر شماره تماس در هر ماه فقط یک بار می‌تواند شرکت کند.</p>
+  <div class="wheel-coupon" id="wheelCoupon"></div>
+  <p class="wheel-privacy">با ثبت‌نام، پرونده خودرو در پنل مدیریت ایجاد می‌شود و نام شما در توضیحات اولیه ثبت خواهد شد. اطلاعات برای مدیریت خدمات و کد تخفیف نگهداری می‌شود.</p>
+</section>
+
 <p class="small">برای نصب برنامه، سایت را با Chrome باز کنید و از منوی مرورگر گزینه نصب برنامه را بزنید.</p>
 </main>
 
@@ -903,5 +956,73 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
     drawScene();
 })();
     </script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase-config.js"></script>
+<script>
+(() => {
+ const canvas=document.getElementById('wheelCanvas'),form=document.getElementById('wheelForm');
+ if(!canvas||!form)return;
+ const ctx=canvas.getContext('2d'),statusEl=document.getElementById('wheelStatus'),spinBtn=document.getElementById('wheelSpin'),couponEl=document.getElementById('wheelCoupon'),TAU=Math.PI*2;
+ const slices=[
+  {label:'۲۰٪ تخفیف',weight:1,color:'#0d7377'},
+  {label:'۴۰٪ تخفیف',weight:1,color:'#164e63'},
+  {label:'پوچ',weight:10,color:'#253640'},
+  {label:'پوچ',weight:10,color:'#172b32'},
+  {label:'۱۰٪ تخفیف',weight:2,color:'#087e8b'},
+  {label:'پوچ',weight:10,color:'#253640'},
+  {label:'۳۰٪ تخفیف',weight:1,color:'#0f5965'},
+  {label:'پوچ',weight:10,color:'#172b32'},
+  {label:'پوچ',weight:10,color:'#253640'},
+  {label:'۱۵٪ نقاشی',weight:1,color:'#087e8b'},
+  {label:'پوچ',weight:10,color:'#172b32'},
+  {label:'پوچ',weight:10,color:'#253640'}
+ ];
+ let rotation=0,busy=false;
+ const $=id=>document.getElementById(id);
+ function digits(v){return String(v||'').replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/\D/g,'')}
+ for(const [id,max] of [['wheelPlateTwo',2],['wheelPlateThree',3],['wheelPlateCity',2]]){
+  $(id).addEventListener('input',()=>{const el=$(id);el.value=digits(el.value).slice(0,max);if(el.value.length===max){const ids=['wheelPlateTwo','wheelPlateLetter','wheelPlateThree','wheelPlateCity'];$(ids[ids.indexOf(id)+1]||'wheelPhone').focus()}});
+ }
+ $('wheelPlateLetter').addEventListener('input',()=>{$('wheelPlateLetter').value=$('wheelPlateLetter').value.replace(/[0-9۰-۹٠-٩\s]/g,'').slice(0,1);if($('wheelPlateLetter').value)$('wheelPlateThree').focus()});
+ function draw(angle){
+  const w=canvas.width,cx=w/2,cy=w/2,r=w/2-8,total=slices.reduce((a,s)=>a+s.weight,0);
+  ctx.clearRect(0,0,w,w);ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);let start=-Math.PI/2;
+  slices.forEach(s=>{const span=TAU*s.weight/total,end=start+span,mid=start+span/2;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,r,start,end);ctx.closePath();ctx.fillStyle=s.color;ctx.fill();ctx.strokeStyle='#a8ffef';ctx.lineWidth=2;ctx.stroke();ctx.save();ctx.rotate(mid);ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#fff';ctx.font='bold 16px Tahoma,Arial,sans-serif';ctx.shadowColor='#0009';ctx.shadowBlur=3;ctx.fillText(s.label,r-18,0,Math.max(35,r*span*.9));ctx.restore();start=end});
+  ctx.beginPath();ctx.arc(0,0,31,0,TAU);ctx.fillStyle='#e9ffff';ctx.fill();ctx.strokeStyle='#20d6c5';ctx.lineWidth=5;ctx.stroke();ctx.fillStyle='#062322';ctx.font='bold 14px Tahoma,Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('شانس',0,0);ctx.restore();
+ }
+ function status(msg,type=''){statusEl.textContent=msg;statusEl.className='wheel-status'+(type?' '+type:'')}
+ function animateTo(index){return new Promise(resolve=>{
+  const total=slices.reduce((a,s)=>a+s.weight,0);let start=-Math.PI/2,center=0;
+  for(let i=0;i<slices.length;i++){const span=TAU*slices[i].weight/total;if(i===index){center=start+span/2;break}start+=span}
+  let target=(-Math.PI/2-center)+(6+Math.floor(Math.random()*3))*TAU;while(target<=rotation+3*TAU)target+=TAU;
+  const from=rotation,distance=target-from,duration=5200,began=performance.now();
+  function frame(now){const t=Math.min(1,(now-began)/duration),eased=1-Math.pow(1-t,4);rotation=from+distance*eased;draw(rotation);if(t<1)requestAnimationFrame(frame);else{rotation=((target%TAU)+TAU)%TAU;draw(rotation);resolve()}}requestAnimationFrame(frame);
+ })}
+ draw(0);
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();if(busy)return;
+  const name=$('wheelName').value.trim(),two=digits($('wheelPlateTwo').value),letter=$('wheelPlateLetter').value.trim(),three=digits($('wheelPlateThree').value),city=digits($('wheelPlateCity').value),phone=$('wheelPhone').value.trim();
+  if(!name||two.length!==2||!letter||three.length!==3||city.length!==2||!phone){status('لطفاً نام، تماس و هر چهار بخش پلاک را کامل وارد کن.','error');return}
+  const plate=two+letter+three+city;
+  if(!window.supabase||!window.MONT_SUPABASE_URL||!window.MONT_SUPABASE_ANON_KEY){status('اتصال Supabase آماده نیست؛ ابتدا فایل SQL راه‌اندازی گردونه را اجرا کن.','error');return}
+  busy=true;spinBtn.disabled=true;couponEl.style.display='none';status('در حال ثبت مشخصات در پنل مدیریت و تعیین نتیجه گردونه…');
+  try{
+   const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
+   const {data,error}=await client.rpc('spin_discount_wheel',{p_full_name:name,p_plate:plate,p_phone:phone});
+   if(error)throw error;const result=Array.isArray(data)?data[0]:data;if(!result)throw new Error('پاسخ معتبری از سامانه دریافت نشد.');
+   if(result.already_spun){status('این شماره تماس در ماه جاری قبلاً شرکت کرده است.','error');return}
+   if(!result.ok||!Number.isInteger(Number(result.slice_index)))throw new Error(result.message||'ثبت اطلاعات ناموفق بود.');
+   const index=Number(result.slice_index);if(index<0||index>=slices.length)throw new Error('نتیجه گردونه معتبر نیست.');
+   await animateTo(index);
+   if(result.coupon_code){couponEl.replaceChildren();couponEl.append(document.createTextNode('تبریک! '+(result.prize_label||slices[index].label)));const strong=document.createElement('strong');strong.textContent=result.coupon_code;couponEl.append(strong,document.createTextNode('کد تخفیف را هنگام مراجعه اعلام کن.'));couponEl.style.display='block';status('برنده شدی! کدت ذخیره شد و پرونده‌ات در پنل مدیریت ثبت شد.','success')}
+   else status('این بار پوچ شد! مشخصاتت در پنل مدیریت ثبت شد؛ ماه آینده دوباره امتحان کن.');
+   form.querySelectorAll('input').forEach(input=>input.disabled=true);spinBtn.textContent='ثبت‌نام انجام شد';
+  }catch(err){console.error('Discount wheel:',err);status(err.message||'خطا در اتصال. چند لحظه بعد دوباره امتحان کن.','error')}
+  finally{busy=false;if(!form.querySelector('input:disabled'))spinBtn.disabled=false}
+ });
+})();
+</script>
+
 </body>
 </html>
