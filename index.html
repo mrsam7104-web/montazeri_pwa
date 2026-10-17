@@ -371,7 +371,7 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 </section>
 <section class="race-game" id="raceGame">
     <h2>🏁 چالش ماشین‌بازی منتظری</h2>
-    <p>از ماشین‌ها جاخالی بده و ۳۰۰۰ امتیاز بگیر تا برنده تخفیف ۲۰٪ بشی!</p>
+    <p>از ماشین‌ها جاخالی بده و ۳۰۰۰ امتیاز بگیر تا برنده تخفیف ۵٪ بشی!</p>
 
     <div class="race-hud">
         <span>امتیاز: <span class="race-score" id="raceScore">0</span></span>
@@ -397,7 +397,7 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
     </div>
 
     <div class="race-prize" id="racePrize">
-        🏆 جایزه: تخفیف ۲۰٪ با کسب ۳۰۰۰ امتیاز
+        🏆 جایزه: تخفیف ۵٪ با کسب ۳۰۰۰ امتیاز
     </div>
 </section>
 
@@ -837,7 +837,7 @@ async function askMONAI(message) {
 
         if (won) {
             prizeEl.textContent =
-                "🎉 امتیاز ۳۰۰۰ ثبت شد! برای تأیید تخفیف ۲۰٪ با مجموعه تماس بگیر.";
+                "🎉 امتیاز ۳۰۰۰ ثبت شد! برای تأیید تخفیف ۵٪ با مجموعه تماس بگیر.";
             playTone(880, 0.18);
             setTimeout(() => playTone(1100, 0.22), 180);
         } else {
@@ -860,7 +860,7 @@ async function askMONAI(message) {
     if (!localStorage.getItem("montazeriRacePrize")) {
         localStorage.setItem("montazeriRacePrize", "earned");
         prizeEl.textContent =
-            "🏆 تبریک! جایزه تخفیف ۲۰٪ رو گرفتی؛ بازی ادامه داره ، از صفحه اسکرین‌شات بگیر و به ما نشون بده!";
+            "🏆 تبریک! جایزه تخفیف ۵٪ رو گرفتی؛ بازی ادامه داره ، از صفحه اسکرین‌شات بگیر و به ما نشون بده!";
         playTone(880, 0.18);
 
         setTimeout(() => playTone(1100, 0.22), 180);
@@ -943,7 +943,7 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
         running = true;
 
         scoreEl.textContent = "0";
-        prizeEl.textContent = "🏆 جایزه: تخفیف ۲۰٪ با کسب ۳۰۰۰ امتیاز";
+        prizeEl.textContent = "🏆 جایزه: تخفیف ۵٪ با کسب ۳۰۰۰ امتیاز";
         overlay.classList.add("hidden");
 
         playTone(500, 0.1);
@@ -965,16 +965,16 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
  if(!canvas||!form)return;
  const ctx=canvas.getContext('2d'),statusEl=document.getElementById('wheelStatus'),spinBtn=document.getElementById('wheelSpin'),couponEl=document.getElementById('wheelCoupon'),TAU=Math.PI*2;
  const slices=[
-  {label:'۲۰٪ تخفیف',weight:1,color:'#0d7377'},
-  {label:'۴۰٪ تخفیف',weight:1,color:'#164e63'},
+  {label:'۵٪ تخفیف',weight:1,color:'#0d7377'},
+  {label:'۵٪ تخفیف',weight:1,color:'#164e63'},
   {label:'پوچ',weight:2,color:'#253640'},
   {label:'پوچ',weight:2,color:'#172b32'},
-  {label:'۱۰٪ تخفیف',weight:1,color:'#087e8b'},
+  {label:'۸٪ تخفیف',weight:1,color:'#087e8b'},
   {label:'پوچ',weight:2,color:'#253640'},
-  {label:'۳۰٪ تخفیف',weight:1,color:'#0f5965'},
+  {label:'۵٪ تخفیف',weight:1,color:'#0f5965'},
   {label:'پوچ',weight:2,color:'#172b32'},
   {label:'پوچ',weight:2,color:'#253640'},
-  {label:'۱۵٪ نقاشی',weight:1,color:'#087e8b'},
+  {label:'۸٪ نقاشی',weight:1,color:'#087e8b'},
   {label:'پوچ',weight:2,color:'#172b32'},
   {label:'پوچ',weight:2,color:'#253640'}
  ];
