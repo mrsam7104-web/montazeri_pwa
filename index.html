@@ -371,7 +371,7 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 </section>
 <section class="race-game" id="raceGame">
     <h2>🏁 چالش ماشین‌بازی منتظری</h2>
-    <p>از ماشین‌ها جاخالی بده و ۳۰۰۰ امتیاز بگیر تا برنده تخفیف ۵٪ بشی!</p>
+    <p>از ماشین‌ها جاخالی بده و ۳۰۰۰ امتیاز بگیر تا برنده تخفیف ۲۰٪ بشی!</p>
 
     <div class="race-hud">
         <span>امتیاز: <span class="race-score" id="raceScore">0</span></span>
@@ -397,7 +397,7 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
     </div>
 
     <div class="race-prize" id="racePrize">
-        🏆 جایزه: تخفیف ۵٪ با کسب ۳۰۰۰ امتیاز
+        🏆 جایزه: تخفیف ۲۰٪ با کسب ۳۰۰۰ امتیاز
     </div>
 </section>
 
@@ -478,91 +478,43 @@ async function askMONAI(message) {
 
 
 <script>
-(async function loadWorkGallery() {
+(function loadWorkGallery() {
   const grid = document.getElementById('gallery-grid');
   if (!grid) return;
 
-  // Public repository used by this GitHub Pages site.
-  const treeUrl = 'https://api.github.com/repos/mrsam7104-web/montazeri_pwa/git/trees/main?recursive=1';
-  const imageExtensions = /\.(?:jpe?g|jfif|webp|gif|avif|bmp|svg|tiff?)$/i;
+  // فهرست ثابت تصاویر؛ نیازی به درخواست GitHub API نیست.
+  const images = [
+    '2014-11-08-377.webp',
+    '2016-06-07-408.webp',
+    '2017-07-23-554.webp',
+    '2017-08-22-557.webp',
+    'Picsart_26-10-16_13-00-05-535.webp',
+    'Picsart_26-10-16_13-01-04-740.webp',
+    'Picsart_26-10-16_13-05-48-590.webp',
+    '۲۰۲۵۰۹۰۴_۱۱۰۳۵۳.webp'
+  ];
+
+  grid.replaceChildren();
   grid.addEventListener('contextmenu', event => event.preventDefault());
 
-  try {
-    const response = await fetch(treeUrl, {
-      headers: { 'Accept': 'application/vnd.github+json' }
-    });
-    if (!response.ok) throw new Error('GitHub API status ' + response.status);
+  images.forEach(filename => {
+    const card = document.createElement('div');
+    card.className = 'gallery-item';
 
-    const data = await response.json();
-    const allFiles = (data.tree || []).filter(item => item.type === 'blob');
-    const paths = new Set(allFiles.map(item => item.path.toLowerCase()));
-    const images = allFiles
-      .filter(item => imageExtensions.test(item.path))
-      .filter(item => !/icon/i.test(item.path.split('/').pop()))
-      // If a WebP copy exists, use it instead of downloading the heavier original.
-      .filter(item => {
-        if (/\.(?:jpe?g|png)$/i.test(item.path)) {
-          const webpPath = item.path.replace(/\.(?:jpe?g|png)$/i, '.webp').toLowerCase();
-          if (paths.has(webpPath)) return false;
-        }
-        return !/\.png$/i.test(item.path);
-      })
-      .sort((a, b) => a.path.localeCompare(b.path));
+    const img = document.createElement('img');
+    img.src = './' + encodeURIComponent(filename);
+    img.alt = 'نمونه‌کار صافکاری منتظری';
+    img.loading = 'lazy';
+    img.decoding = 'async';
 
-    grid.replaceChildren();
+    const caption = document.createElement('span');
+    caption.textContent = 'نمونه‌کار صافکاری منتظری';
 
-    if (!images.length) {
-      const message = document.createElement('div');
-      message.className = 'gallery-message';
-      message.textContent = 'هنوز تصویری غیر از PNG در مخزن پیدا نشد.';
-      grid.appendChild(message);
-      return;
-    }
+    img.addEventListener('error', () => card.remove());
 
-    for (const item of images) {
-      const url = 'https://raw.githubusercontent.com/mrsam7104-web/montazeri_pwa/main/' +
-        item.path.split('/').map(encodeURIComponent).join('/');
-
-      const card = document.createElement('div');
-      card.className = 'gallery-item';
-
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = item.path.split('/').pop();
-      img.loading = 'lazy';
-      img.decoding = 'async';
-
-      const caption = document.createElement('span');
-      caption.textContent = item.path.split('/').pop();
-
-      img.addEventListener('error', () => {
-        card.remove();
-        if (!grid.querySelector('.gallery-item')) {
-          const message = document.createElement('div');
-          message.className = 'gallery-message';
-          message.textContent = 'تصاویر بارگذاری نشدند؛ فرمت یا دسترسی مخزن را بررسی کن.';
-          grid.appendChild(message);
-        }
-      });
-
-      card.append(img, caption);
-      grid.appendChild(card);
-    }
-
-    if (data.truncated) {
-      const note = document.createElement('div');
-      note.className = 'gallery-message';
-      note.textContent = 'مخزن بزرگ است؛ ممکن است بعضی تصاویر در فهرست نمایش داده نشوند.';
-      grid.appendChild(note);
-    }
-  } catch (error) {
-    console.error('MON gallery:', error);
-    grid.replaceChildren();
-    const message = document.createElement('div');
-    message.className = 'gallery-message';
-    message.textContent = 'بارگذاری گالری ناموفق بود؛ مطمئن شو مخزن GitHub عمومی است و اتصال اینترنت برقرار است.';
-    grid.appendChild(message);
-  }
+    card.append(img, caption);
+    grid.appendChild(card);
+  });
 })();
 </script>
 
@@ -837,7 +789,7 @@ async function askMONAI(message) {
 
         if (won) {
             prizeEl.textContent =
-                "🎉 امتیاز ۳۰۰۰ ثبت شد! برای تأیید تخفیف ۵٪ با مجموعه تماس بگیر.";
+                "🎉 امتیاز ۳۰۰۰ ثبت شد! برای تأیید تخفیف ۲۰٪ با مجموعه تماس بگیر.";
             playTone(880, 0.18);
             setTimeout(() => playTone(1100, 0.22), 180);
         } else {
@@ -860,7 +812,7 @@ async function askMONAI(message) {
     if (!localStorage.getItem("montazeriRacePrize")) {
         localStorage.setItem("montazeriRacePrize", "earned");
         prizeEl.textContent =
-            "🏆 تبریک! جایزه تخفیف ۵٪ رو گرفتی؛ بازی ادامه داره ، از صفحه اسکرین‌شات بگیر و به ما نشون بده!";
+            "🏆 تبریک! جایزه تخفیف ۲۰٪ رو گرفتی؛ بازی ادامه داره ، از صفحه اسکرین‌شات بگیر و به ما نشون بده!";
         playTone(880, 0.18);
 
         setTimeout(() => playTone(1100, 0.22), 180);
@@ -943,7 +895,7 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
         running = true;
 
         scoreEl.textContent = "0";
-        prizeEl.textContent = "🏆 جایزه: تخفیف ۵٪ با کسب ۳۰۰۰ امتیاز";
+        prizeEl.textContent = "🏆 جایزه: تخفیف ۲۰٪ با کسب ۳۰۰۰ امتیاز";
         overlay.classList.add("hidden");
 
         playTone(500, 0.1);
@@ -965,16 +917,16 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
  if(!canvas||!form)return;
  const ctx=canvas.getContext('2d'),statusEl=document.getElementById('wheelStatus'),spinBtn=document.getElementById('wheelSpin'),couponEl=document.getElementById('wheelCoupon'),TAU=Math.PI*2;
  const slices=[
-  {label:'۵٪ تخفیف',weight:1,color:'#0d7377'},
-  {label:'۵٪ تخفیف',weight:1,color:'#164e63'},
+  {label:'۲۰٪ تخفیف',weight:1,color:'#0d7377'},
+  {label:'۴۰٪ تخفیف',weight:1,color:'#164e63'},
   {label:'پوچ',weight:2,color:'#253640'},
   {label:'پوچ',weight:2,color:'#172b32'},
-  {label:'۸٪ تخفیف',weight:1,color:'#087e8b'},
+  {label:'۱۰٪ تخفیف',weight:1,color:'#087e8b'},
   {label:'پوچ',weight:2,color:'#253640'},
-  {label:'۵٪ تخفیف',weight:1,color:'#0f5965'},
+  {label:'۳۰٪ تخفیف',weight:1,color:'#0f5965'},
   {label:'پوچ',weight:2,color:'#172b32'},
   {label:'پوچ',weight:2,color:'#253640'},
-  {label:'۸٪ نقاشی',weight:1,color:'#087e8b'},
+  {label:'۱۵٪ نقاشی',weight:1,color:'#087e8b'},
   {label:'پوچ',weight:2,color:'#172b32'},
   {label:'پوچ',weight:2,color:'#253640'}
  ];
