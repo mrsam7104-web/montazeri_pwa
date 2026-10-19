@@ -343,6 +343,57 @@ body::before{background:#13d8ef;top:8%;left:-110px}body::after{background:#087e8
 @media(hover:none){.gallery-item:hover,.links a:hover,.hero-actions a:hover{transform:none;box-shadow:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 
+
+
+/* MONTAZERI GLASS CONTACT PANEL — cinematic floating glass */
+.contact-box#contactBox{
+  position:fixed; z-index:9999; right:max(18px,env(safe-area-inset-right));
+  bottom:max(18px,env(safe-area-inset-bottom)); width:min(340px,calc(100vw - 36px));
+  margin:0; text-align:initial; direction:rtl; perspective:1000px;
+  animation:contactDockFloat 5.5s ease-in-out infinite;
+}
+.contact-toggle#contactToggle{
+  width:100%; min-height:58px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:15px 19px; border:1px solid rgba(106,242,239,.58); border-radius:19px;
+  color:#eaffff; background:linear-gradient(135deg,rgba(21,62,77,.72),rgba(12,27,51,.68));
+  -webkit-backdrop-filter:blur(22px) saturate(155%); backdrop-filter:blur(22px) saturate(155%);
+  box-shadow:0 14px 42px #0008,inset 0 1px 0 #ffffff35,0 0 24px #21d9d022;
+  position:relative; overflow:hidden; isolation:isolate;
+}
+.contact-toggle#contactToggle::before{content:"";position:absolute;inset:-80% -30%;z-index:-1;
+  background:linear-gradient(110deg,transparent 35%,#ffffff20 48%,#5fffff32 52%,transparent 65%);
+  transform:translateX(-65%) rotate(12deg);animation:glassSweep 6s ease-in-out infinite;pointer-events:none}
+.contact-toggle#contactToggle::after{content:"✦";font-size:18px;color:#7cfff4;text-shadow:0 0 14px #22e0d0;order:-1}
+.contact-toggle#contactToggle:hover{transform:translateY(-3px) scale(1.015);box-shadow:0 18px 48px #0009,0 0 32px #22e0d044}
+.contact-list#contactList{position:absolute;bottom:calc(100% + 13px);right:0;width:100%;display:block;
+  padding:0 13px; border:1px solid transparent; border-radius:25px; background:transparent;
+  opacity:0;visibility:hidden;pointer-events:none;transform:translateY(18px) rotateX(-8deg) scale(.96);transform-origin:bottom center;
+  transition:opacity .35s ease,transform .55s cubic-bezier(.2,.8,.2,1),visibility .35s ease;
+  margin:0;}
+.contact-list#contactList::before{content:"";position:absolute;inset:0;border-radius:25px;z-index:0;
+  background:linear-gradient(145deg,rgba(24,43,75,.78),rgba(8,17,31,.76));
+  border:1px solid rgba(151,190,255,.38);box-shadow:0 24px 65px #0009,inset 0 1px 0 #ffffff2c,0 0 34px #607dff20;
+  -webkit-backdrop-filter:blur(28px) saturate(145%);backdrop-filter:blur(28px) saturate(145%);}
+.contact-list-inner{position:relative;z-index:1;overflow:visible;min-height:0;padding:14px 0 7px;}
+.contact-box.open .contact-list#contactList{opacity:1;visibility:visible;pointer-events:auto;transform:translateY(0) rotateX(0) scale(1)}
+.contact-box.open .contact-toggle#contactToggle{border-color:#85fff4;box-shadow:0 0 0 1px #38e8df30,0 14px 42px #0008,0 0 28px #22e0d044}
+.contact-number{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin:0 0 8px;padding:14px 13px;border:1px solid rgba(154,195,255,.18);border-radius:15px;
+  background:linear-gradient(120deg,rgba(24,40,68,.64),rgba(15,29,47,.52));
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#f0f7ff;text-decoration:none;
+  box-shadow:inset 0 1px 0 #ffffff0b;transition:transform .28s,border-color .28s,background .28s,box-shadow .28s;
+  animation:contactItemIn .55s both;}
+.contact-number:nth-child(2){animation-delay:.06s}.contact-number:nth-child(3){animation-delay:.12s}.contact-number:nth-child(4){animation-delay:.18s}
+.contact-number::after{content:"›";font-size:24px;color:#9eafff;line-height:1;text-shadow:0 0 12px #718bff77}
+.contact-number:hover{transform:translateX(-4px);border-color:#7bfff0;background:rgba(24,67,78,.7);box-shadow:0 8px 24px #0003,0 0 18px #22e0d01c}
+.contact-number strong{display:block;font-size:13px;margin-bottom:5px;color:#f1f7ff}
+.contact-number span{color:#9fe9e7;font-size:12px;display:block}
+@keyframes contactDockFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-5px) rotate(-.35deg)}}
+@keyframes glassSweep{0%,20%{transform:translateX(-75%) rotate(12deg)}65%,100%{transform:translateX(75%) rotate(12deg)}}
+@keyframes contactItemIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:520px){.contact-box#contactBox{right:14px;bottom:max(14px,env(safe-area-inset-bottom));width:min(320px,calc(100vw - 28px))}.contact-list#contactList{padding-inline:8px}}
+@media(prefers-reduced-motion:reduce){.contact-box#contactBox,.contact-toggle#contactToggle::before,.contact-number{animation:none!important;transition:none!important}}
+
 </style>
 </head>
 
