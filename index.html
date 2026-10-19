@@ -301,49 +301,46 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 @media(max-width:380px){.wheel-plate-parts{gap:4px}.wheel-plate-parts input{font-size:14px;padding:11px 1px}}
 
 
-/* === MONTAZERI MOTION DESIGN: subtle, premium, performance-aware === */
-body{position:relative;isolation:isolate;overflow-x:hidden}
-body::before,body::after{content:"";position:fixed;pointer-events:none;z-index:-1;inset:auto;will-change:transform;filter:blur(1px)}
-body::before{width:42vw;height:42vw;min-width:240px;min-height:240px;max-width:620px;max-height:620px;top:-18vw;left:-14vw;border:1px solid #13d8ef25;border-radius:36% 64% 58% 42%;background:radial-gradient(circle at 35% 35%,#13d8ef15,transparent 67%);animation:ambientDrift 19s ease-in-out infinite alternate}
-body::after{width:34vw;height:34vw;min-width:210px;min-height:210px;max-width:500px;max-height:500px;right:-13vw;bottom:-14vw;border:1px solid #20d6c51f;border-radius:58% 42% 35% 65%;background:radial-gradient(circle at 60% 45%,#20d6c511,transparent 68%);animation:ambientDrift 24s ease-in-out infinite alternate-reverse}
-.card{position:relative;overflow:hidden;animation:cardArrive .9s cubic-bezier(.2,.8,.2,1) both}
-.card::before{content:"";position:absolute;inset:-60% auto -60% -65%;width:38%;pointer-events:none;transform:rotate(18deg);background:linear-gradient(90deg,transparent,#ffffff08,transparent);animation:cardShimmer 12s ease-in-out 2s infinite}
-.logo{transform-origin:50% 60%;animation:logoFloat 6s ease-in-out infinite;filter:drop-shadow(0 0 18px #13d8ef12)}
-h1,.manager{animation:textArrive .8s .12s both}
-.links a{position:relative;overflow:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s,border-color .28s,filter .28s}
-.links a::after{content:"";position:absolute;inset:0 auto 0 -120%;width:70%;transform:skewX(-20deg);background:linear-gradient(90deg,transparent,#ffffff26,transparent);transition:left .65s ease;pointer-events:none}
-.links a:hover{transform:translateY(-3px) scale(1.012);box-shadow:0 10px 26px #13d8ef18;filter:saturate(1.12)}
-.links a:hover::after{left:140%}
-.instagram-link,.contact-toggle,.race-btn,.wheel-btn{position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease,filter .25s ease}
-.instagram-link:hover,.contact-toggle:hover,.race-btn:hover,.wheel-btn:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 8px 24px #20d6c522}
-.gallery-item{animation:galleryBreathe 7s ease-in-out infinite;transform-origin:center;backface-visibility:hidden}
-.gallery-item:nth-child(3n+1){animation-delay:-1.7s}
-.gallery-item:nth-child(3n+2){animation-delay:-4.1s}
-.gallery-item:nth-child(4n){animation-duration:8.5s}
-.gallery-item:hover{animation-play-state:paused}
-.gallery-item img{will-change:transform;transition:transform .7s cubic-bezier(.2,.8,.2,1),filter .7s}
-.gallery-item:hover img{transform:scale(1.07);filter:saturate(1.12) contrast(1.03)}
-.gallery h2,.race-game h2,.discount-wheel h2{ text-shadow:0 0 18px #20d6c51c }
-.race-game,.discount-wheel{position:relative;transition:border-color .35s,box-shadow .35s,transform .35s;}
-.race-game:hover,.discount-wheel:hover{border-color:#20d6c588;box-shadow:0 12px 34px #0004,0 0 22px #20d6c50b}
-.race-canvas-wrap{box-shadow:0 0 0 1px #20d6c50a,0 10px 28px #0004;transition:box-shadow .3s}
-.race-canvas-wrap:focus-within,.race-canvas-wrap:hover{box-shadow:0 0 0 1px #20d6c555,0 12px 32px #0005}
-.wheel-canvas-wrap{filter:drop-shadow(0 10px 22px #0005)}
-.wheel-pointer{animation:pointerPulse 2.8s ease-in-out infinite}
-.contact-number{transition:transform .22s ease,background .22s,border-color .22s}
-.contact-number:hover{transform:translateX(-3px)}
-.small{animation:softPulse 5s ease-in-out infinite}
-@keyframes ambientDrift{0%{transform:translate3d(0,0,0) rotate(0deg)}50%{transform:translate3d(5vw,4vh,0) rotate(18deg)}100%{transform:translate3d(-2vw,8vh,0) rotate(-12deg)}}
-@keyframes cardArrive{from{opacity:0;transform:translateY(18px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes cardShimmer{0%,72%,100%{left:-65%;opacity:0}78%{opacity:1}94%{left:140%;opacity:0}}
-@keyframes logoFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-5px) rotate(.6deg)}}
-@keyframes textArrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes galleryBreathe{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2.5px) rotate(.18deg)}}
-@keyframes pointerPulse{0%,100%{filter:drop-shadow(0 3px 4px #0009)}50%{filter:drop-shadow(0 3px 9px #20d6c577)}}
-@keyframes softPulse{0%,100%{opacity:.8}50%{opacity:1}}
-@media(max-width:480px){body{padding:12px}.card{padding:22px 16px}.logo{animation-duration:7s}body::before{top:-80px;left:-100px}body::after{right:-100px;bottom:-90px}}
+/* Premium visual upgrade: cinematic hero, ambient motion and interactive polish */
+body{position:relative;isolation:isolate;overflow-x:hidden;background:radial-gradient(ellipse at 50% 0,#07313a,transparent 52%),#080d12}
+body::before,body::after{content:"";position:fixed;z-index:-1;pointer-events:none;width:240px;height:240px;border-radius:50%;filter:blur(55px);opacity:.20;animation:ambientDrift 13s ease-in-out infinite alternate}
+body::before{background:#13d8ef;top:8%;left:-110px}body::after{background:#087e80;right:-120px;bottom:8%;animation-delay:-6s}
+@keyframes ambientDrift{from{transform:translate3d(0,-18px,0) scale(.85)}to{transform:translate3d(35px,28px,0) scale(1.2)}}
+.card{position:relative;overflow:hidden;animation:cardReveal .75s cubic-bezier(.2,.8,.2,1) both;border-color:#24454d;box-shadow:0 20px 70px #0007,0 0 35px #13d8ef0a}
+.card::before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,#13d8ef,#7ffff0,transparent);background-size:200% 100%;animation:topGlow 5s linear infinite}
+@keyframes cardReveal{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes topGlow{to{background-position:200% 0}}
+.logo{animation:logoFloat 5s ease-in-out infinite;filter:drop-shadow(0 8px 18px #13d8ef18)}
+@keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.hero-banner{position:relative;isolation:isolate;overflow:hidden;margin:16px 0 20px;padding:24px 16px;border:1px solid #1d6870;border-radius:20px;background:radial-gradient(ellipse at 50% 0,#0c6068a6,transparent 70%),linear-gradient(145deg,#102a31,#091217 72%);box-shadow:inset 0 1px #ffffff0b,0 12px 32px #0003}
+.hero-banner::before{content:"";position:absolute;z-index:-1;width:170px;height:170px;border:1px solid #20d6c52b;border-radius:50%;left:-55px;top:-95px;box-shadow:0 0 0 18px #20d6c50a,0 0 0 38px #20d6c507;animation:heroOrbit 12s linear infinite}
+.hero-eyebrow{display:inline-block;color:#a4fff6;border:1px solid #20d6c55c;background:#20d6c510;padding:6px 11px;border-radius:99px;font-size:11px;letter-spacing:.3px}
+.hero-banner h1{font-size:clamp(23px,5vw,31px);line-height:1.6;margin:13px 0 6px;color:#f0ffff;text-shadow:0 0 22px #13d8ef25}
+.hero-banner h1 span{color:#20d6c5}
+.hero-banner p{font-size:13px;margin:0 auto 16px;max-width:360px}
+.hero-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px}
+.hero-actions a{display:inline-flex;align-items:center;justify-content:center;padding:11px 15px;border-radius:12px;font-size:12px;transition:transform .25s,box-shadow .25s,background .25s}
+.hero-actions .hero-primary{background:linear-gradient(120deg,#20d6c5,#13d8ef);color:#061416;border:0;box-shadow:0 5px 18px #13d8ef25}
+.hero-actions .hero-secondary{background:#0b2027;border-color:#32616a;color:#dffcff}
+.hero-actions a:hover{transform:translateY(-3px);box-shadow:0 8px 22px #13d8ef25}
+@keyframes heroOrbit{to{transform:rotate(360deg)}}
+.links a,.instagram-link,.contact-toggle,.race-game,.gallery-item{transform:translateZ(0);transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease,filter .25s ease}
+.links a{position:relative;overflow:hidden}
+.links a::after{content:"";position:absolute;top:-60%;left:-70%;width:35%;height:220%;transform:rotate(22deg);background:linear-gradient(90deg,transparent,#ffffff26,transparent);transition:left .65s ease;pointer-events:none}
+.links a:hover::after{left:140%}.links a:hover{transform:translateY(-2px);box-shadow:0 8px 22px #13d8ef16}
+.gallery{position:relative}.gallery h2{display:flex;align-items:center;gap:8px}.gallery h2::before{content:"";display:inline-block;width:4px;height:19px;border-radius:5px;background:#20d6c5;box-shadow:0 0 12px #20d6c588}
+.gallery-item{animation:galleryBreathe 6s ease-in-out infinite;animation-delay:calc(var(--gallery-index,0)*-.4s)}
+.gallery-item:nth-child(2n){--gallery-index:1}.gallery-item:nth-child(3n){--gallery-index:2}
+@keyframes galleryBreathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.gallery-item:hover{animation-play-state:paused;transform:translateY(-5px) scale(1.015);box-shadow:0 12px 28px #13d8ef18}
+.gallery-item:hover img{transform:scale(1.08);filter:saturate(1.12)}
+.contact-float{position:fixed;z-index:9000;right:max(14px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;padding:12px 16px;border:1px solid #8bfff1;border-radius:999px;background:linear-gradient(135deg,#20d6c5,#087e80);color:#031819;box-shadow:0 8px 28px #0008,0 0 0 0 #20d6c566;font: bold 13px Tahoma,Arial,sans-serif;cursor:pointer;animation:contactPulse 3.2s ease-out infinite;transition:transform .2s,box-shadow .2s}
+.contact-float .float-icon{font-size:18px;line-height:1}.contact-float:hover{transform:translateY(-3px) scale(1.025);box-shadow:0 12px 30px #0008,0 0 22px #20d6c555}
+@keyframes contactPulse{0%,100%{box-shadow:0 8px 28px #0008,0 0 0 0 #20d6c500}50%{box-shadow:0 8px 28px #0008,0 0 0 7px #20d6c500}}
+.contact-float:active{transform:scale(.97)}
+@media(max-width:420px){body{padding:12px}.card{padding:20px 15px}.hero-banner{padding:21px 12px}.contact-float{right:12px;bottom:12px;padding:11px 14px}.gallery-item img{height:132px}}
+@media(hover:none){.gallery-item:hover,.links a:hover,.hero-actions a:hover{transform:none;box-shadow:none}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
-@media(hover:none){.links a:hover,.instagram-link:hover,.contact-toggle:hover,.race-btn:hover,.wheel-btn:hover,.contact-number:hover{transform:none;box-shadow:none}}
 
 </style>
 </head>
@@ -352,6 +349,15 @@ h1,.manager{animation:textArrive .8s .12s both}
 <main class="card">
 <img class="logo" src="/icon-192.png" alt="لوگوی صافکاری منتظری">
 <p class="manager">با مدیریت محمود منتظری</p>
+<section class="hero-banner" aria-label="معرفی صافکاری منتظری">
+  <span class="hero-eyebrow">✦ کیفیت، دقت و اعتماد</span>
+  <h1>صافکاری <span>منتظری</span></h1>
+  <p>سامانه هوشمند مدیریت صافکاری و پیگیری وضعیت خودرو؛ همراه شما از پذیرش تا تحویل.</p>
+  <div class="hero-actions">
+    <a class="hero-primary" href="#gallery-title">مشاهده نمونه‌کارها ↙</a>
+    <a class="hero-secondary" href="#contactBox">ارتباط با استادکاران</a>
+  </div>
+</section>
 <p>سامانه مدیریت صافکاری و پیگیری وضعیت خودرو</p>
 <nav class="links">
 <a href="/admin.html">ورود به پنل مدیریت صافکاری</a>
@@ -564,6 +570,9 @@ async function askMONAI(message) {
 </script>
 
 
+<button class="contact-float" id="floatingContact" type="button" aria-label="نمایش شماره تماس استادکاران">
+  <span class="float-icon">☎</span><span>تماس با ما</span>
+</button>
 <div class="lightbox" id="gallery-lightbox" aria-hidden="true" role="dialog" aria-label="نمایش بزرگ تصویر نمونه‌کار">
   <button class="lightbox-close" id="lightbox-close" type="button" aria-label="بستن تصویر">×</button>
   <div class="lightbox-content">
@@ -1018,6 +1027,19 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
   }catch(err){console.error('Discount wheel:',err);status(err.message||'خطا در اتصال. چند لحظه بعد دوباره امتحان کن.','error')}
   finally{busy=false;if(!form.querySelector('input:disabled'))spinBtn.disabled=false}
  });
+})();
+</script>
+
+<script>
+(() => {
+  const floating = document.getElementById('floatingContact');
+  const toggle = document.getElementById('contactToggle');
+  const box = document.getElementById('contactBox');
+  if (!floating || !toggle || !box) return;
+  floating.addEventListener('click', () => {
+    if (!box.classList.contains('open')) toggle.click();
+    box.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center'});
+  });
 })();
 </script>
 
