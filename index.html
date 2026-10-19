@@ -300,6 +300,51 @@ a.mon-ai:hover{background:#10333a;box-shadow:0 0 28px #13d8ef24}
 .wheel-privacy{font-size:11px;color:#8ca0ac;margin:10px auto 0;max-width:480px;line-height:1.8}
 @media(max-width:380px){.wheel-plate-parts{gap:4px}.wheel-plate-parts input{font-size:14px;padding:11px 1px}}
 
+
+/* === MONTAZERI MOTION DESIGN: subtle, premium, performance-aware === */
+body{position:relative;isolation:isolate;overflow-x:hidden}
+body::before,body::after{content:"";position:fixed;pointer-events:none;z-index:-1;inset:auto;will-change:transform;filter:blur(1px)}
+body::before{width:42vw;height:42vw;min-width:240px;min-height:240px;max-width:620px;max-height:620px;top:-18vw;left:-14vw;border:1px solid #13d8ef25;border-radius:36% 64% 58% 42%;background:radial-gradient(circle at 35% 35%,#13d8ef15,transparent 67%);animation:ambientDrift 19s ease-in-out infinite alternate}
+body::after{width:34vw;height:34vw;min-width:210px;min-height:210px;max-width:500px;max-height:500px;right:-13vw;bottom:-14vw;border:1px solid #20d6c51f;border-radius:58% 42% 35% 65%;background:radial-gradient(circle at 60% 45%,#20d6c511,transparent 68%);animation:ambientDrift 24s ease-in-out infinite alternate-reverse}
+.card{position:relative;overflow:hidden;animation:cardArrive .9s cubic-bezier(.2,.8,.2,1) both}
+.card::before{content:"";position:absolute;inset:-60% auto -60% -65%;width:38%;pointer-events:none;transform:rotate(18deg);background:linear-gradient(90deg,transparent,#ffffff08,transparent);animation:cardShimmer 12s ease-in-out 2s infinite}
+.logo{transform-origin:50% 60%;animation:logoFloat 6s ease-in-out infinite;filter:drop-shadow(0 0 18px #13d8ef12)}
+h1,.manager{animation:textArrive .8s .12s both}
+.links a{position:relative;overflow:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s,border-color .28s,filter .28s}
+.links a::after{content:"";position:absolute;inset:0 auto 0 -120%;width:70%;transform:skewX(-20deg);background:linear-gradient(90deg,transparent,#ffffff26,transparent);transition:left .65s ease;pointer-events:none}
+.links a:hover{transform:translateY(-3px) scale(1.012);box-shadow:0 10px 26px #13d8ef18;filter:saturate(1.12)}
+.links a:hover::after{left:140%}
+.instagram-link,.contact-toggle,.race-btn,.wheel-btn{position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease,filter .25s ease}
+.instagram-link:hover,.contact-toggle:hover,.race-btn:hover,.wheel-btn:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 8px 24px #20d6c522}
+.gallery-item{animation:galleryBreathe 7s ease-in-out infinite;transform-origin:center;backface-visibility:hidden}
+.gallery-item:nth-child(3n+1){animation-delay:-1.7s}
+.gallery-item:nth-child(3n+2){animation-delay:-4.1s}
+.gallery-item:nth-child(4n){animation-duration:8.5s}
+.gallery-item:hover{animation-play-state:paused}
+.gallery-item img{will-change:transform;transition:transform .7s cubic-bezier(.2,.8,.2,1),filter .7s}
+.gallery-item:hover img{transform:scale(1.07);filter:saturate(1.12) contrast(1.03)}
+.gallery h2,.race-game h2,.discount-wheel h2{ text-shadow:0 0 18px #20d6c51c }
+.race-game,.discount-wheel{position:relative;transition:border-color .35s,box-shadow .35s,transform .35s;}
+.race-game:hover,.discount-wheel:hover{border-color:#20d6c588;box-shadow:0 12px 34px #0004,0 0 22px #20d6c50b}
+.race-canvas-wrap{box-shadow:0 0 0 1px #20d6c50a,0 10px 28px #0004;transition:box-shadow .3s}
+.race-canvas-wrap:focus-within,.race-canvas-wrap:hover{box-shadow:0 0 0 1px #20d6c555,0 12px 32px #0005}
+.wheel-canvas-wrap{filter:drop-shadow(0 10px 22px #0005)}
+.wheel-pointer{animation:pointerPulse 2.8s ease-in-out infinite}
+.contact-number{transition:transform .22s ease,background .22s,border-color .22s}
+.contact-number:hover{transform:translateX(-3px)}
+.small{animation:softPulse 5s ease-in-out infinite}
+@keyframes ambientDrift{0%{transform:translate3d(0,0,0) rotate(0deg)}50%{transform:translate3d(5vw,4vh,0) rotate(18deg)}100%{transform:translate3d(-2vw,8vh,0) rotate(-12deg)}}
+@keyframes cardArrive{from{opacity:0;transform:translateY(18px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cardShimmer{0%,72%,100%{left:-65%;opacity:0}78%{opacity:1}94%{left:140%;opacity:0}}
+@keyframes logoFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-5px) rotate(.6deg)}}
+@keyframes textArrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes galleryBreathe{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-2.5px) rotate(.18deg)}}
+@keyframes pointerPulse{0%,100%{filter:drop-shadow(0 3px 4px #0009)}50%{filter:drop-shadow(0 3px 9px #20d6c577)}}
+@keyframes softPulse{0%,100%{opacity:.8}50%{opacity:1}}
+@media(max-width:480px){body{padding:12px}.card{padding:22px 16px}.logo{animation-duration:7s}body::before{top:-80px;left:-100px}body::after{right:-100px;bottom:-90px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+@media(hover:none){.links a:hover,.instagram-link:hover,.contact-toggle:hover,.race-btn:hover,.wheel-btn:hover,.contact-number:hover{transform:none;box-shadow:none}}
+
 </style>
 </head>
 
