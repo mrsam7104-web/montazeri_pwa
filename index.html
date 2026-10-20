@@ -400,6 +400,7 @@ body::before{background:#13d8ef;top:8%;left:-110px}body::after{background:#087e8
 <body>
 <main class="card">
 <img class="logo" src="/icon-192.png" alt="لوگوی صافکاری منتظری">
+<div id="customerCodeBadge" style="display:none;margin:8px auto 14px;padding:8px 14px;width:max-content;max-width:95%;border:1px solid #20d6c5;border-radius:12px;background:#06252a;color:#cafff8;font-size:12px">کد مشتری: <strong id="customerCodeValue" style="letter-spacing:1px"></strong></div>
 <p class="manager">با مدیریت محمود منتظری</p>
 <section class="hero-banner" aria-label="معرفی صافکاری منتظری">
   <span class="hero-eyebrow">✦ کیفیت، دقت و اعتماد</span>
@@ -511,13 +512,6 @@ body::before{background:#13d8ef;top:8%;left:-110px}body::after{background:#087e8
     <label>نام و نام خانوادگی
       <input id="wheelName" name="full_name" type="text" autocomplete="name" maxlength="100" required placeholder="مثلاً علی رضایی">
     </label>
-    <label>شماره پلاک خودرو</label>
-    <div class="wheel-plate-parts" dir="ltr" aria-label="شماره پلاک خودرو">
-      <input id="wheelPlateTwo" inputmode="numeric" maxlength="2" required aria-label="دو رقم اول پلاک" placeholder="۱۲">
-      <input id="wheelPlateLetter" class="wheel-letter" maxlength="1" required aria-label="حرف پلاک" placeholder="ب">
-      <input id="wheelPlateThree" inputmode="numeric" maxlength="3" required aria-label="سه رقم پلاک" placeholder="۳۴۵">
-      <input id="wheelPlateCity" inputmode="numeric" maxlength="2" required aria-label="کد شهرستان" placeholder="۶۷">
-    </div>
     <label>شماره تماس
       <input id="wheelPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" required placeholder="09xxxxxxxxx">
     </label>
@@ -690,12 +684,7 @@ async function askMONAI(message) {
   <div class="race-claim-kicker">MONT AZERI · 5% REWARD</div><h3 id="raceClaimHeading">📝 ثبت‌نام راننده</h3>
   <p id="raceClaimIntro">به ۱۰۰۰ امتیاز رسیدی! اطلاعاتت رو ثبت کن؛ بعد از بستن فرم بازی ادامه پیدا می‌کنه و در ۳۰۰۰ امتیاز تخفیف بررسی می‌شه.</p>
   <label>نام و نام خانوادگی<input id="raceClaimName" required maxlength="100" autocomplete="name" placeholder="مثلاً علی رضایی"></label>
-  <label>شماره پلاک خودرو</label><div class="race-claim-plate" dir="ltr">
-   <input id="raceClaimTwo" inputmode="numeric" maxlength="2" required placeholder="۱۲" aria-label="دو رقم اول پلاک">
-   <input id="raceClaimLetter" maxlength="1" required placeholder="ب" aria-label="حرف پلاک">
-   <input id="raceClaimThree" inputmode="numeric" maxlength="3" required placeholder="۳۴۵" aria-label="سه رقم پلاک">
-   <input id="raceClaimCity" inputmode="numeric" maxlength="2" required placeholder="۶۷" aria-label="کد شهر">
-  </div>
+  <label>شماره موبایل<input id="raceClaimPhone" required type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="09xxxxxxxxx"></label>
   <button class="race-btn race-claim-submit" id="raceClaimSubmit" type="submit">ثبت اطلاعات و دریافت نتیجه</button>
   <p id="raceClaimStatus" role="status" aria-live="polite"></p><div id="raceClaimResult" class="race-claim-result" hidden></div>
  </form>
@@ -721,6 +710,12 @@ async function askMONAI(message) {
     let registrationDetails = null;
     let registrationCheckpointShown = false;
     let claimInProgress = false;
+    let reward3000Issued = false;
+    const CUSTOMER_KEY = "montazeriCustomer";
+    function readCustomer(){try{return JSON.parse(localStorage.getItem(CUSTOMER_KEY)||"null")}catch(_){return null}}
+    function saveCustomer(c){try{localStorage.setItem(CUSTOMER_KEY,JSON.stringify(c))}catch(_){};renderCustomerCode(c)}
+    function renderCustomerCode(c=readCustomer()){const badge=document.getElementById("customerCodeBadge"),val=document.getElementById("customerCodeValue");if(!badge||!val)return;if(c&&c.customer_code){val.textContent=c.customer_code;badge.style.display="block"}else badge.style.display="none"}
+    renderCustomerCode();
 
     const W = canvas.width;
     const H = canvas.height;
@@ -739,6 +734,8 @@ async function askMONAI(message) {
     let roadOffset = 0;
     let animationId = 0;
     let lastSound = 0;
+    let exhaustClock = 0;
+    let lastTruckHorn = 0;
 
     try {
         best = Number(localStorage.getItem("montazeriRaceBest")) || 0;
@@ -771,9 +768,24 @@ async function askMONAI(message) {
         } catch (_) {}
     }
 
-    function drawCar(x, y, color, player = false) {
+    function drawCar(x, y, color, player = false, lean = 0, smokePhase = 0) {
         ctx.save();
         ctx.translate(x, y);
+        // Stronger, smooth steering lean: the nose tilts into the turn.
+        ctx.rotate(Math.max(-0.30, Math.min(0.30, lean)));
+        // Small animated exhaust puffs trail behind every car.
+        if (!player || running) {
+            const puff = (smokePhase % 1);
+            for (let i = 0; i < 3; i++) {
+                const t = (puff + i / 3) % 1;
+                ctx.globalAlpha = (1 - t) * 0.22;
+                ctx.fillStyle = '#c8d2d4';
+                ctx.beginPath();
+                ctx.arc((i % 2 ? 7 : -7) + Math.sin(t * 5 + i) * 3, 32 + t * 15, 2 + t * 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
 
         // Tires
         ctx.fillStyle = "#101516";
@@ -837,7 +849,8 @@ async function askMONAI(message) {
     }
 
     function drawObstacle(o) {
-        const x = o.type === 'pedestrian' ? o.x : laneW * o.lane + laneW / 2;
+        const visualLane = (typeof o.lanePos === 'number') ? o.lanePos : o.lane;
+        const x = o.type === 'pedestrian' ? o.x : laneW * visualLane + laneW / 2;
         const y = o.y;
         if (o.type === 'pedestrian') {
             // Zebra crossing follows the pedestrian while they cross the road.
@@ -849,20 +862,27 @@ async function askMONAI(message) {
         ctx.save();ctx.translate(x,y);
         if(o.type==='truck'){
           ctx.shadowColor=o.color;ctx.shadowBlur=10;ctx.fillStyle='#111a1d';ctx.fillRect(-19,-29,7,16);ctx.fillRect(12,-29,7,16);ctx.fillRect(-19,13,7,16);ctx.fillRect(12,13,7,16);
-          ctx.fillStyle=o.color;ctx.beginPath();ctx.roundRect(-15,-31,30,62,5);ctx.fill();ctx.fillStyle='#263c43';ctx.fillRect(-11,-24,22,24);ctx.fillStyle='#d9f7ff';ctx.fillRect(-10,-21,4,5);ctx.fillRect(6,-21,4,5);ctx.fillStyle='#ffefb1';ctx.fillRect(-10,23,5,4);ctx.fillRect(5,23,5,4);ctx.fillStyle='#e9ffff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('TRUCK',0,8);
+          ctx.fillStyle=o.color;ctx.beginPath();ctx.roundRect(-15,-31,30,62,5);ctx.fill();ctx.fillStyle='#263c43';ctx.fillRect(-11,-24,22,24);ctx.fillStyle='#d9f7ff';ctx.fillRect(-10,-21,4,5);ctx.fillRect(6,-21,4,5);ctx.fillStyle='#ffefb1';ctx.fillRect(-10,23,5,4);ctx.fillRect(5,23,5,4);// High-beam flashes pulse forward from the truck.
+          const flash = (Math.sin((o.flashClock || 0) * 8) > 0.25);
+          ctx.fillStyle=flash?'#fff6ad':'#ffefb1';ctx.fillRect(-10,-31,5,3);ctx.fillRect(5,-31,5,3);
+          if (flash) { ctx.save(); ctx.globalAlpha=.20; ctx.fillStyle='#fff6ad'; ctx.beginPath(); ctx.moveTo(-11,-31);ctx.lineTo(-28,-66);ctx.lineTo(-2,-66);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(11,-31);ctx.lineTo(2,-66);ctx.lineTo(28,-66);ctx.closePath();ctx.fill();ctx.restore(); }
+          ctx.fillStyle='#e9ffff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('TRUCK',0,8);
         } else if(o.type==='motor'){
           ctx.shadowColor='#ffcf67';ctx.shadowBlur=8;ctx.fillStyle='#111';ctx.beginPath();ctx.arc(0,-18,7,0,Math.PI*2);ctx.arc(0,19,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle=o.color;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-18);ctx.lineTo(-8,-2);ctx.lineTo(2,8);ctx.lineTo(0,19);ctx.moveTo(-8,-2);ctx.lineTo(8,-6);ctx.stroke();ctx.fillStyle='#ffd58b';ctx.beginPath();ctx.arc(2,-8,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#17232b';ctx.fillRect(-4,-1,9,13);
         } else if(o.type==='pedestrian'){
-          ctx.shadowColor='#ff6485';ctx.shadowBlur=10;ctx.fillStyle='#f2c9a5';ctx.beginPath();ctx.arc(0,-19,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle=o.color;ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(0,8);ctx.moveTo(0,-5);ctx.lineTo(-11,2);ctx.moveTo(0,-5);ctx.lineTo(10,1);ctx.moveTo(0,8);ctx.lineTo(-8,23);ctx.moveTo(0,8);ctx.lineTo(8,23);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(-5,-23,10,2);
-        } else drawCar(0,0,o.color);
+          ctx.shadowColor='#ff6485';ctx.shadowBlur=10;ctx.fillStyle='#f2c9a5';ctx.beginPath();ctx.arc(0,-19,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle=o.color;ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(0,8);ctx.moveTo(0,-5);ctx.lineTo(-11,2);ctx.moveTo(0,-5);ctx.lineTo(10,1);ctx.moveTo(0,8);ctx.lineTo(-8 + Math.sin((o.walkPhase||0))*5,23);ctx.moveTo(0,8);ctx.lineTo(8 - Math.sin((o.walkPhase||0))*5,23);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(-5,-23,10,2);
+        } else drawCar(0,0,o.color, false, 0, (o.y * .035) % 1);
         ctx.restore();
     }
     function drawScene() {
         drawRoad();
         obstacles.forEach(drawObstacle);
         // subtle headlight glow around player
+        if (!Number.isFinite(playerLane)) playerLane = Number.isFinite(lane) ? lane : 1;
+        playerLane = Math.max(0, Math.min(2, playerLane));
         const px=laneW*playerLane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
-        drawCar(px,H-75,'#20d6c5',true);
+        const steeringLean = Math.max(-0.34, Math.min(0.34, (lane - playerLane) * 0.70));
+        drawCar(px,H-75,'#20d6c5',true,steeringLean,exhaustClock);
     }
 
     function move(direction) {
@@ -877,11 +897,11 @@ async function askMONAI(message) {
     }
 
     document.getElementById("raceLeft").addEventListener(
-        "click", () => move(1)
+        "click", () => move(-1)
     );
 
     document.getElementById("raceRight").addEventListener(
-        "click", () => move(-1)
+        "click", () => move(1)
     );
 
     document.addEventListener("keydown", e => {
@@ -956,29 +976,39 @@ async function askMONAI(message) {
         scoreEl.textContent = Math.floor(score);
 
         if (score >= 1000 && !registrationCheckpointShown) {
-            score = 1000; scoreEl.textContent = '1000';
             registrationCheckpointShown = true;
-            running = false;
-            cancelAnimationFrame(animationId);
-            titleEl.textContent = '📝 ثبت‌نام در میانه بازی';
-            messageEl.textContent = 'این توقف تصادف نیست؛ برای ادامه تا ۳۰۰۰ امتیاز، فرم ثبت‌نام را کامل کن.';
-            startBtn.textContent = 'ادامه پس از ثبت‌نام';
-            setClaimMode('register');
-            openClaimForm();
-            drawScene();
-            return;
+            const saved = readCustomer();
+            if (saved && saved.customer_code && saved.phone) {
+                registrationDetails = {name:saved.full_name, phone:saved.phone, customer_code:saved.customer_code};
+                prizeEl.textContent = 'ثبت‌نامت قبلاً انجام شده؛ تا ۳۰۰۰ امتیاز ادامه بده.';
+            } else {
+                running = false;
+                cancelAnimationFrame(animationId);
+                titleEl.textContent = '📝 ثبت‌نام راننده';
+                messageEl.textContent = 'برای ادامه بازی، ثبت‌نام را کامل کن یا فرم را ببند.';
+                setClaimMode('register');
+                openClaimForm();
+                drawScene();
+                return;
+            }
         }
-        if (score >= 3000) { score = 3000; scoreEl.textContent = '3000'; finishGame(true); drawScene(); return; }
+        if (score >= 3000 && !reward3000Issued) {
+            reward3000Issued = true;
+            const saved = readCustomer();
+            if(saved && saved.phone) submitRaceClaim(saved.full_name, saved.phone, true);
+            else { reward3000Issued = false; running = false; setClaimMode('register'); openClaimForm(); drawScene(); return; }
+        }
 
         // Slightly gentler speed curve; the game remains challenging at higher scores.
-        const speed = 280 + Math.min(score * 0.30, 350);
+        const speed = 315 + Math.min(score * 0.34, 390);
+        exhaustClock += dt * 2.8;
         roadOffset = (roadOffset + speed * dt) % 50;
         spawnTimer += dt;
         // Smoothly interpolate the car toward the selected lane instead of snapping.
-        playerLane += (lane - playerLane) * Math.min(1, dt * 11);
+        playerLane += (lane - playerLane) * Math.min(1, dt * 8.5);
         if (Math.abs(lane - playerLane) < 0.006) playerLane = lane;
 
-        const spawnInterval = Math.max(0.43, 0.94 - score / 5200);
+        const spawnInterval = Math.max(0.34, 0.82 - score / 4600);
         const enoughSpacing = obstacles.length === 0 || obstacles[obstacles.length - 1].y > 145;
 
         if (spawnTimer >= spawnInterval && enoughSpacing) {
@@ -992,22 +1022,64 @@ async function askMONAI(message) {
             }
             const roll=Math.random();
             const type=roll<0.22?'truck':roll<0.45?'motor':roll<0.65?'pedestrian':'car';
-            obstacles.push({lane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]});
+            const obstacle = {lane:newLane,lanePos:newLane,laneTarget:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type],flashClock:Math.random()*6,walkPhase:Math.random()*6,hornTimer:0};
+            // Pedestrians cross horizontally; initialize x/direction so they are visible
+            // and their position stays in sync with the drawing and collision checks.
+            if (type === 'pedestrian') {
+                obstacle.x = Math.random() < 0.5 ? 22 : W - 22;
+                obstacle.crossDirection = obstacle.x < W / 2 ? 1 : -1;
+            }
+            obstacles.push(obstacle);
             if(type==='pedestrian') playTone(720,.045,'triangle',.012);
+            if(type==='truck') { obstacle.hornTimer = 0.8 + Math.random()*1.8; }
         }
 
-        obstacles.forEach(o => o.y += speed * dt);
+        obstacles.forEach(o => {
+            o.y += speed * dt;
+            o.flashClock += dt;
+            if (o.type === 'pedestrian') o.walkPhase = (o.walkPhase || 0) + dt * 11;
+            // After 2000 points, traffic occasionally changes lanes with a slow, smooth drift.
+            if (score >= 2000 && o.type !== 'pedestrian') {
+                if (typeof o.laneChangeTimer !== 'number') o.laneChangeTimer = 1.5 + Math.random()*3;
+                o.laneChangeTimer -= dt;
+                if (o.laneChangeTimer <= 0 && o.laneTarget === o.lane) {
+                    const choices = [0,1,2].filter(n => n !== o.lane);
+                    o.laneTarget = choices[Math.floor(Math.random()*choices.length)];
+                    o.laneChangeTimer = 2.2 + Math.random()*3.2;
+                }
+                o.lanePos += (o.laneTarget - o.lanePos) * Math.min(1, dt * 0.55);
+                if (Math.abs(o.laneTarget-o.lanePos)<0.025) { o.lanePos=o.laneTarget; o.lane=o.laneTarget; }
+            }
+            if (o.type === 'truck') {
+                o.hornTimer -= dt;
+                if (o.hornTimer <= 0) {
+                    // Two-tone synthetic truck horn; respects the sound toggle.
+                    playTone(220, .22, 'sawtooth', .045);
+                    setTimeout(() => playTone(174, .25, 'sawtooth', .035), 110);
+                    o.hornTimer = 3.8 + Math.random()*4.5;
+                }
+            }
+            if (o.type === 'pedestrian') {
+                o.x += o.crossDirection * (105 + Math.min(score * 0.025, 35)) * dt;
+                if (o.x < 22) { o.x = 22; o.crossDirection = 1; }
+                if (o.x > W - 22) { o.x = W - 22; o.crossDirection = -1; }
+            }
+        });
 
         // Collision detection
         const playerY = H - 75;
+        if (!Number.isFinite(playerLane)) playerLane = lane;
+        if (!Number.isFinite(lane) || lane < 0 || lane > 2) lane = 1;
+        const playerX = laneW * playerLane + laneW / 2;
 
-        // Match collisions against the car's rendered position, not the target lane.
-        // The car eases between lanes; comparing o.lane with `lane` caused false crashes
-        // while the car was visibly still moving away from that lane.
         for (const o of obstacles) {
-            const laneDistance = Math.abs(o.lane - playerLane);
-            const verticalLimit = o.type === 'truck' ? 31 : o.type === 'pedestrian' ? 24 : 27;
-            if (laneDistance < 0.34 && Math.abs(o.y - playerY) < verticalLimit) {
+            const hit = o.type === 'pedestrian'
+                ? Math.abs(o.x - playerX) < 20
+                : Math.abs((Number.isFinite(o.lanePos) ? o.lanePos : o.lane) - playerLane) < 0.34;
+            if (
+                hit &&
+                Math.abs(o.y - playerY) < (o.type==='truck'?34:o.type==='pedestrian'?25:30)
+            ) {
                 finishGame(false);
                 drawScene();
                 return;
@@ -1059,62 +1131,44 @@ async function askMONAI(message) {
         setClaimMode('register');
       }
     });
-    for(const [id,max] of [['raceClaimTwo',2],['raceClaimThree',3],['raceClaimCity',2]])document.getElementById(id).addEventListener('input',e=>{e.target.value=digits(e.target.value).slice(0,max)});
-    document.getElementById('raceClaimLetter').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[0-9۰-۹٠-٩\s]/g,'').slice(0,1)});
 
-    async function submitRaceClaim(name, plate, isFinal){
+    async function submitRaceClaim(name, phone, isFinal){
       if(claimInProgress)return;
-      if(!window.supabase||!window.MONT_SUPABASE_URL||!window.MONT_SUPABASE_ANON_KEY){
-        claimStatus.textContent='اتصال پایگاه داده آماده نیست؛ اطلاعات ثبت نشد. تنظیمات Supabase را بررسی کن.'; 
-        if(isFinal)openClaimForm(); return;
-      }
+      if(!window.supabase||!window.MONT_SUPABASE_URL||!window.MONT_SUPABASE_ANON_KEY){claimStatus.textContent='اتصال پایگاه داده آماده نیست؛ اطلاعات ثبت نشد.';return;}
       claimInProgress=true;
       const btn=document.getElementById('raceClaimSubmit'); if(btn)btn.disabled=true;
-      claimStatus.textContent='در حال بررسی پلاک و ثبت تخفیف…';
+      claimStatus.textContent=isFinal?'در حال ثبت تخفیف ۵٪…':'در حال ثبت اطلاعات…';
       try{
         const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
-        const {data,error}=await client.rpc('claim_race_discount',{p_full_name:name,p_plate:plate});
-        if(error)throw error;
-        const result=Array.isArray(data)?data[0]:data;
-        if(!result?.ok)throw new Error(result?.message||'ثبت جایزه انجام نشد.');
-        claimResult.hidden=false;claimResult.replaceChildren();
-        if(result.is_registered){
-          claimResult.textContent='پلاک در سیستم صافکاری ثبت شده است؛ درخواست تخفیف ۵٪ برای مدیر ارسال شد.';
-          claimStatus.textContent='تخفیف برای بررسی و اعمال توسط مدیر ثبت شد.';
-        }else{
-          claimResult.append(document.createTextNode('ثبت‌نام جدید انجام شد. کد پیگیری اختصاصی‌ات را ذخیره کن: '));
-          const strong=document.createElement('strong');strong.textContent=result.tracking_code;claimResult.append(strong);
-          claimStatus.textContent='اطلاعات ثبت‌نام و درخواست تخفیف برای پنل مدیریت ارسال شد.';
-        }
-        if(isFinal){closeClaimForm();messageEl.textContent='جایزه ۵٪ ثبت شد؛ نتیجه در پنل مدیریت قابل پیگیری است.';}
-        else {
-          registrationDetails={name,plate};
-          closeClaimForm();
-          claimStatus.textContent='اطلاعات ذخیره شد؛ بازی ادامه پیدا می‌کند. در ۳۰۰۰ امتیاز تخفیف ثبت می‌شود.';
-          running=true; lastTime=performance.now(); animationId=requestAnimationFrame(update);
-          prizeEl.textContent='اطلاعات ثبت شد؛ تا ۳۰۰۰ امتیاز ادامه بده تا تخفیف ۵٪ ثبت شود.';
+        if(!isFinal){
+          const {data,error}=await client.rpc('register_site_customer',{p_full_name:name,p_phone:phone});
+          if(error)throw error;const result=Array.isArray(data)?data[0]:data;
+          if(!result?.ok)throw new Error(result?.message||'ثبت اطلاعات انجام نشد.');
+          registrationDetails={name:result.full_name||name,phone:result.phone||digits(phone),customer_code:result.customer_code};
+          saveCustomer(registrationDetails);
+          claimResult.hidden=false;claimResult.textContent='ثبت‌نام انجام شد. کد اختصاصی شما در بالای سایت نمایش داده می‌شود: '+result.customer_code;
+          claimStatus.textContent='اطلاعات ذخیره شد؛ بازی ادامه پیدا می‌کند.';
+          closeClaimForm();running=true;lastTime=performance.now();animationId=requestAnimationFrame(update);
+          prizeEl.textContent='ثبت‌نام انجام شد؛ تا ۳۰۰۰ امتیاز بازی کن تا تخفیف ۵٪ ثبت شود.';
+        } else {
+          const {data,error}=await client.rpc('claim_race_discount',{p_full_name:name,p_phone:phone,p_score:Math.max(3000,Math.floor(score))});
+          if(error)throw error;const result=Array.isArray(data)?data[0]:data;
+          if(!result?.ok)throw new Error(result?.message||'ثبت جایزه انجام نشد.');
+          const customer=readCustomer()||{};saveCustomer({...customer,full_name:result.full_name||name,phone:result.phone||digits(phone),customer_code:result.customer_code||customer.customer_code});
+          claimStatus.textContent='تخفیف ۵٪ ثبت شد؛ بازی ادامه دارد.';
+          prizeEl.textContent='🎉 تخفیف ۵٪ ثبت شد! بازی ادامه دارد.';
+          if(claimResult){claimResult.hidden=false;claimResult.textContent='تخفیف ۵٪ ثبت شد. کد مشتری: '+(result.customer_code||'')}
         }
         playTone(980,.16);setTimeout(()=>playTone(1320,.22),170);
-      }catch(err){
-        console.error(err);claimStatus.textContent='ثبت انجام نشد: '+(err.message||'خطای اتصال')+'؛ دوباره تلاش کن.';
-        if(btn)btn.disabled=false;
-        if(isFinal)openClaimForm();
-      }finally{claimInProgress=false;}
+      }catch(err){console.error(err);claimStatus.textContent='ثبت انجام نشد: '+(err.message||'خطای اتصال');if(isFinal)reward3000Issued=false;if(btn)btn.disabled=false;}
+      finally{claimInProgress=false; if(isFinal && running){const btn2=document.getElementById('raceClaimSubmit');if(btn2)btn2.disabled=false}}
     }
 
     claimForm.addEventListener('submit',async e=>{
       e.preventDefault();
-      const name=document.getElementById('raceClaimName').value.trim(),two=digits(document.getElementById('raceClaimTwo').value),letter=document.getElementById('raceClaimLetter').value.trim(),three=digits(document.getElementById('raceClaimThree').value),city=digits(document.getElementById('raceClaimCity').value);
-      if(!name||two.length!==2||!letter||three.length!==3||city.length!==2){claimStatus.textContent='نام و همه بخش‌های پلاک رو کامل وارد کن.';return;}
-      const plate=two+letter+three+city;
-      if(score < 3000 && registrationCheckpointShown){
-        registrationDetails={name,plate};
-        closeClaimForm();
-        running=true;lastTime=performance.now();animationId=requestAnimationFrame(update);
-        prizeEl.textContent='اطلاعات ثبت شد؛ تا ۳۰۰۰ امتیاز ادامه بده تا تخفیف ۵٪ ثبت شود.';
-        return;
-      }
-      await submitRaceClaim(name,plate,true);
+      const name=document.getElementById('raceClaimName').value.trim(),phone=document.getElementById('raceClaimPhone').value.trim();
+      if(name.length<3||digits(phone).length<10){claimStatus.textContent='نام کامل و شماره موبایل معتبر را وارد کن.';return;}
+      await submitRaceClaim(name,phone,false);
     });
 
     function startGame() {
@@ -1124,8 +1178,9 @@ async function askMONAI(message) {
         playerLane = 1;
         obstacles = [];
         score = 0;
-        registrationDetails = null;
+        registrationDetails = readCustomer();
         registrationCheckpointShown = false;
+        reward3000Issued = false;
         claimInProgress = false;
         spawnTimer = 0;
         roadOffset = 0;
@@ -1133,7 +1188,7 @@ async function askMONAI(message) {
         running = true;
 
         scoreEl.textContent = "0";
-        prizeEl.textContent = "🏆 در ۱۰۰۰ امتیاز ثبت‌نام کن؛ در ۳۰۰۰ امتیاز تخفیف ۵٪ بگیر";
+        prizeEl.textContent = readCustomer() ? "🏆 خوش برگشتی! در ۳۰۰۰ امتیاز تخفیف ۵٪ بگیر" : "🏆 در ۱۰۰۰ امتیاز ثبت‌نام کن؛ در ۳۰۰۰ امتیاز تخفیف ۵٪ بگیر";
         overlay.classList.add("hidden");
 
         playTone(500, 0.1);
@@ -1150,6 +1205,38 @@ async function askMONAI(message) {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
 <script>
+// Keep the locally displayed customer code synchronized with the authoritative Supabase customer record.
+(async function syncStoredCustomerCode(){
+  const KEY='montazeriCustomer';
+  const badge=document.getElementById('customerCodeBadge');
+  const value=document.getElementById('customerCodeValue');
+  const hide=()=>{if(badge)badge.style.display='none';if(value)value.textContent=''};
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(!raw){hide();return;}
+    const saved=JSON.parse(raw);
+    if(!saved || !saved.phone){hide();return;}
+    if(!window.supabase || !window.MONT_SUPABASE_URL || !window.MONT_SUPABASE_ANON_KEY){
+      // Without a database connection we cannot safely confirm that the stored code is still valid.
+      hide(); return;
+    }
+    const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
+    const phone=String(saved.phone).replace(/[^0-9]/g,'');
+    const {data,error}=await client.from('site_customers').select('full_name,phone,customer_code').eq('phone',phone).maybeSingle();
+    if(error) throw error;
+    if(!data || !data.customer_code){localStorage.removeItem(KEY);hide();return;}
+    const fresh={...saved,full_name:data.full_name||saved.full_name,phone:data.phone||saved.phone,customer_code:data.customer_code};
+    localStorage.setItem(KEY,JSON.stringify(fresh));
+    if(value)value.textContent=data.customer_code;
+    if(badge)badge.style.display='block';
+  }catch(err){
+    console.warn('Customer code sync failed; hiding potentially stale code.',err);
+    hide();
+  }
+})();
+</script>
+<script>
+function saveWheelCustomer(c){try{const old=JSON.parse(localStorage.getItem("montazeriCustomer")||"{}");const merged={...old,...c};localStorage.setItem("montazeriCustomer",JSON.stringify(merged));const b=document.getElementById("customerCodeBadge"),v=document.getElementById("customerCodeValue");if(b&&v&&merged.customer_code){v.textContent=merged.customer_code;b.style.display="block"}}catch(_){}}
 (() => {
  const canvas=document.getElementById('wheelCanvas'),form=document.getElementById('wheelForm');
  if(!canvas||!form)return;
@@ -1171,10 +1258,6 @@ async function askMONAI(message) {
  let rotation=0,busy=false;
  const $=id=>document.getElementById(id);
  function digits(v){return String(v||'').replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/\D/g,'')}
- for(const [id,max] of [['wheelPlateTwo',2],['wheelPlateThree',3],['wheelPlateCity',2]]){
-  $(id).addEventListener('input',()=>{const el=$(id);el.value=digits(el.value).slice(0,max);if(el.value.length===max){const ids=['wheelPlateTwo','wheelPlateLetter','wheelPlateThree','wheelPlateCity'];$(ids[ids.indexOf(id)+1]||'wheelPhone').focus()}});
- }
- $('wheelPlateLetter').addEventListener('input',()=>{$('wheelPlateLetter').value=$('wheelPlateLetter').value.replace(/[0-9۰-۹٠-٩\s]/g,'').slice(0,1);if($('wheelPlateLetter').value)$('wheelPlateThree').focus()});
  function draw(angle){
   const w=canvas.width,cx=w/2,cy=w/2,r=w/2-8,total=slices.reduce((a,s)=>a+s.weight,0);
   ctx.clearRect(0,0,w,w);ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);let start=-Math.PI/2;
@@ -1192,18 +1275,19 @@ async function askMONAI(message) {
  draw(0);
  form.addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;
-  const name=$('wheelName').value.trim(),two=digits($('wheelPlateTwo').value),letter=$('wheelPlateLetter').value.trim(),three=digits($('wheelPlateThree').value),city=digits($('wheelPlateCity').value),phone=$('wheelPhone').value.trim();
-  if(!name||two.length!==2||!letter||three.length!==3||city.length!==2||!phone){status('لطفاً نام، تماس و هر چهار بخش پلاک را کامل وارد کن.','error');return}
-  const plate=two+letter+three+city;
+  const name=$('wheelName').value.trim(),phone=$('wheelPhone').value.trim();
+  if(name.length<3||digits(phone).length<10){status('لطفاً نام کامل و شماره موبایل معتبر وارد کن.','error');return}
   if(!window.supabase||!window.MONT_SUPABASE_URL||!window.MONT_SUPABASE_ANON_KEY){status('اتصال Supabase آماده نیست؛ ابتدا فایل SQL راه‌اندازی گردونه را اجرا کن.','error');return}
   busy=true;spinBtn.disabled=true;couponEl.style.display='none';status('در حال ثبت مشخصات در پنل مدیریت و تعیین نتیجه گردونه…');
   try{
    const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
-   const {data,error}=await client.rpc('spin_discount_wheel',{p_full_name:name,p_plate:plate,p_phone:phone});
+   const {data,error}=await client.rpc('spin_discount_wheel',{p_full_name:name,p_phone:phone});
    if(error)throw error;const result=Array.isArray(data)?data[0]:data;if(!result)throw new Error('پاسخ معتبری از سامانه دریافت نشد.');
+   if(result.customer_code)saveWheelCustomer({full_name:name,phone:digits(phone),customer_code:result.customer_code});
    if(result.already_spun){status('این شماره تماس در ماه جاری قبلاً شرکت کرده است.','error');return}
    if(!result.ok||!Number.isInteger(Number(result.slice_index)))throw new Error(result.message||'ثبت اطلاعات ناموفق بود.');
    const index=Number(result.slice_index);if(index<0||index>=slices.length)throw new Error('نتیجه گردونه معتبر نیست.');
+   saveWheelCustomer({full_name:name,phone:digits(phone),customer_code:result.customer_code});
    await animateTo(index);
    if(result.coupon_code){couponEl.replaceChildren();couponEl.append(document.createTextNode('تبریک! '+(result.prize_label||slices[index].label)));const strong=document.createElement('strong');strong.textContent=result.coupon_code;couponEl.append(strong,document.createTextNode('کد تخفیف را هنگام مراجعه اعلام کن.'));couponEl.style.display='block';status('برنده شدی! کدت ذخیره شد و پرونده‌ات در پنل مدیریت ثبت شد.','success')}
    else status('این بار پوچ شد! مشخصاتت در پنل مدیریت ثبت شد؛ ماه آینده دوباره امتحان کن.');
