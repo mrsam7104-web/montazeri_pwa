@@ -687,8 +687,8 @@ async function askMONAI(message) {
 <div id="raceClaimModal" class="race-claim-modal" aria-hidden="true">
  <form id="raceClaimForm" class="race-claim-card">
   <button type="button" id="raceClaimClose" class="race-claim-close" aria-label="بستن">×</button>
-  <div class="race-claim-kicker">MONT AZERI · 5% REWARD</div><h3>🏆 تبریک، راننده!</h3>
-  <p>۳۰۰۰ امتیاز گرفتی. برای ثبت جایزه، اطلاعاتت رو وارد کن.</p>
+  <div class="race-claim-kicker">MONT AZERI · 5% REWARD</div><h3 id="raceClaimHeading">📝 ثبت‌نام راننده</h3>
+  <p id="raceClaimIntro">به ۱۰۰۰ امتیاز رسیدی! اطلاعاتت رو ثبت کن؛ بعد از بستن فرم بازی ادامه پیدا می‌کنه و در ۳۰۰۰ امتیاز تخفیف بررسی می‌شه.</p>
   <label>نام و نام خانوادگی<input id="raceClaimName" required maxlength="100" autocomplete="name" placeholder="مثلاً علی رضایی"></label>
   <label>شماره پلاک خودرو</label><div class="race-claim-plate" dir="ltr">
    <input id="raceClaimTwo" inputmode="numeric" maxlength="2" required placeholder="۱۲" aria-label="دو رقم اول پلاک">
@@ -717,6 +717,10 @@ async function askMONAI(message) {
     const startBtn = document.getElementById("raceStart");
     const soundBtn = document.getElementById("raceSound");
     const prizeEl = document.getElementById("racePrize");
+
+    let registrationDetails = null;
+    let registrationCheckpointShown = false;
+    let claimInProgress = false;
 
     const W = canvas.width;
     const H = canvas.height;
@@ -806,16 +810,9 @@ async function askMONAI(message) {
         ctx.fillStyle = "#252e30";
         ctx.fillRect(0, 0, W, H);
 
-        // Raised curb edges with alternating black/yellow hazard blocks
         ctx.fillStyle = "#173d32";
-        ctx.fillRect(0, 0, 15, H);
-        ctx.fillRect(W - 15, 0, 15, H);
-        const curbH = 28, curbOffset = roadOffset % curbH;
-        for (let y = -curbH + curbOffset; y < H; y += curbH) {
-            ctx.fillStyle = (Math.floor((y - curbOffset + curbH) / curbH) % 2 === 0) ? "#f5f0d8" : "#e4a63b";
-            ctx.fillRect(0, y, 8, curbH * 0.55);
-            ctx.fillRect(W - 8, y, 8, curbH * 0.55);
-        }
+        ctx.fillRect(0, 0, 8, H);
+        ctx.fillRect(W - 8, 0, 8, H);
 
         ctx.strokeStyle = "#d5e5df";
         ctx.lineWidth = 3;
@@ -833,16 +830,7 @@ async function askMONAI(message) {
     }
 
     function drawObstacle(o) {
-        const x = o.type === 'pedestrian' ? o.x : laneW * o.lane + laneW / 2;
-        const y = o.y;
-        if (o.type === 'pedestrian') {
-            // Zebra crossing follows the pedestrian while they cross the road.
-            ctx.save();
-            ctx.fillStyle = "#f3f5ef";
-            for (let i = -3; i <= 3; i++) ctx.fillRect(18, y + i * 7 - 2, W - 36, 4);
-            ctx.restore();
-        }
-        ctx.save();ctx.translate(x,y);
+        const x=laneW*o.lane+laneW/2,y=o.y;ctx.save();ctx.translate(x,y);
         if(o.type==='truck'){
           ctx.shadowColor=o.color;ctx.shadowBlur=10;ctx.fillStyle='#111a1d';ctx.fillRect(-19,-29,7,16);ctx.fillRect(12,-29,7,16);ctx.fillRect(-19,13,7,16);ctx.fillRect(12,13,7,16);
           ctx.fillStyle=o.color;ctx.beginPath();ctx.roundRect(-15,-31,30,62,5);ctx.fill();ctx.fillStyle='#263c43';ctx.fillRect(-11,-24,22,24);ctx.fillStyle='#d9f7ff';ctx.fillRect(-10,-21,4,5);ctx.fillRect(6,-21,4,5);ctx.fillStyle='#ffefb1';ctx.fillRect(-10,23,5,4);ctx.fillRect(5,23,5,4);ctx.fillStyle='#e9ffff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('TRUCK',0,8);
@@ -925,7 +913,7 @@ async function askMONAI(message) {
 
         titleEl.textContent = won ? "🏆 قهرمان شدی!" : "💥 تصادف کردی!";
         messageEl.textContent = won
-            ? "به ۳۰۰۰ امتیاز رسیدی! برای دریافت تخفیف با صافکاری تماس بگیر و از صفحه اسکرین‌شات بگیر."
+            ? "به ۳۰۰۰ امتیاز رسیدی! در حال ثبت جایزه ۵٪…"
             : "امتیازت: " + Math.floor(score) +
               " — دوباره تلاش کن و رکوردت رو بشکن!";
 
@@ -933,9 +921,10 @@ async function askMONAI(message) {
         overlay.classList.remove("hidden");
 
         if (won) {
-            prizeEl.textContent = "🎉 ۳۰۰۰ امتیاز! اطلاعاتت رو وارد کن تا جایزه ۵٪ بررسی و ثبت بشه.";
+            prizeEl.textContent = "🎉 ۳۰۰۰ امتیاز! جایزه ۵٪ در حال ثبت است.";
             playTone(880, 0.18); setTimeout(() => playTone(1100, 0.22), 180);
-            openClaimForm();
+            if (registrationDetails) submitRaceClaim(registrationDetails.name, registrationDetails.plate, true);
+            else { setClaimMode('final'); openClaimForm(); }
         } else {
             playTone(130, 0.35, "sawtooth", 0.06);
         }
@@ -950,6 +939,16 @@ async function askMONAI(message) {
         score += dt * 40;
         scoreEl.textContent = Math.floor(score);
 
+        if (score >= 1000 && !registrationCheckpointShown) {
+            score = 1000; scoreEl.textContent = '1000';
+            registrationCheckpointShown = true;
+            running = false;
+            cancelAnimationFrame(animationId);
+            setClaimMode('register');
+            openClaimForm();
+            drawScene();
+            return;
+        }
         if (score >= 3000) { score = 3000; scoreEl.textContent = '3000'; finishGame(true); drawScene(); return; }
 
         // Slightly gentler speed curve; the game remains challenging at higher scores.
@@ -960,8 +959,8 @@ async function askMONAI(message) {
         playerLane += (lane - playerLane) * Math.min(1, dt * 11);
         if (Math.abs(lane - playerLane) < 0.006) playerLane = lane;
 
-        const spawnInterval = Math.max(0.38, 0.82 - score / 4300);
-        const enoughSpacing = obstacles.length === 0 || obstacles[obstacles.length - 1].y > 125;
+        const spawnInterval = Math.max(0.43, 0.94 - score / 5200);
+        const enoughSpacing = obstacles.length === 0 || obstacles[obstacles.length - 1].y > 145;
 
         if (spawnTimer >= spawnInterval && enoughSpacing) {
             spawnTimer = 0;
@@ -973,37 +972,20 @@ async function askMONAI(message) {
                 newLane = alternatives[Math.floor(Math.random() * alternatives.length)];
             }
             const roll=Math.random();
-            const type=roll<0.24?'truck':roll<0.47?'motor':roll<0.72?'pedestrian':'car';
-            const obstacle = {lane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]};
-            if (type === 'pedestrian') {
-                obstacle.x = Math.random() < 0.5 ? 22 : W - 22;
-                obstacle.crossDirection = obstacle.x < W / 2 ? 1 : -1;
-                obstacle.crossProgress = 0;
-            }
-            obstacles.push(obstacle);
+            const type=roll<0.22?'truck':roll<0.45?'motor':roll<0.65?'pedestrian':'car';
+            obstacles.push({lane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]});
             if(type==='pedestrian') playTone(720,.045,'triangle',.012);
         }
 
-        obstacles.forEach(o => {
-            o.y += speed * dt;
-            if (o.type === 'pedestrian') {
-                o.x += o.crossDirection * (105 + Math.min(score * 0.025, 35)) * dt;
-                if (o.x < 22) { o.x = 22; o.crossDirection = 1; }
-                if (o.x > W - 22) { o.x = W - 22; o.crossDirection = -1; }
-            }
-        });
+        obstacles.forEach(o => o.y += speed * dt);
 
         // Collision detection
         const playerY = H - 75;
 
-        const playerX = laneW * playerLane + laneW / 2;
         for (const o of obstacles) {
-            const samePath = o.type === 'pedestrian'
-                ? Math.abs(o.x - playerX) < 27
-                : Math.abs(o.lane - playerLane) < 0.48;
             if (
-                samePath &&
-                Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?34:37)
+                o.lane === lane &&
+                Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37)
             ) {
                 finishGame(false);
                 drawScene();
@@ -1035,18 +1017,83 @@ async function askMONAI(message) {
     const claimModal=document.getElementById('raceClaimModal'), claimForm=document.getElementById('raceClaimForm');
     const claimStatus=document.getElementById('raceClaimStatus'), claimResult=document.getElementById('raceClaimResult');
     const digits=v=>String(v||'').replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/\D/g,'');
+    function setClaimMode(mode){
+      const heading=document.getElementById('raceClaimHeading'), intro=document.getElementById('raceClaimIntro'), btn=document.getElementById('raceClaimSubmit');
+      if(mode==='register'){
+        heading.textContent='📝 ثبت‌نام راننده';
+        intro.textContent='به ۱۰۰۰ امتیاز رسیدی! اطلاعاتت رو ثبت کن؛ بعد از بستن فرم بازی ادامه پیدا می‌کنه و در ۳۰۰۰ امتیاز تخفیف بررسی می‌شه.';
+        btn.textContent='ثبت اطلاعات و ادامه بازی';
+      } else {
+        heading.textContent='🏆 تبریک، راننده!';
+        intro.textContent='به ۳۰۰۰ امتیاز رسیدی! اطلاعاتت رو وارد کن تا تخفیف ۵٪ بررسی و در پنل مدیریت ثبت بشه.';
+        btn.textContent='ثبت اطلاعات و دریافت تخفیف';
+      }
+    }
     function openClaimForm(){claimModal.classList.add('open');claimModal.setAttribute('aria-hidden','false');claimResult.hidden=true;claimStatus.textContent='';claimForm.querySelectorAll('input').forEach(x=>x.disabled=false);document.getElementById('raceClaimSubmit').disabled=false;}
-    document.getElementById('raceClaimClose').addEventListener('click',()=>{claimModal.classList.remove('open');claimModal.setAttribute('aria-hidden','true')});
+    function closeClaimForm(){claimModal.classList.remove('open');claimModal.setAttribute('aria-hidden','true');}
+    document.getElementById('raceClaimClose').addEventListener('click',()=>{
+      closeClaimForm();
+      if(registrationCheckpointShown && !registrationDetails && score < 3000){
+        // The player may close the form, but must register before earning the final reward.
+        setClaimMode('register');
+      }
+    });
     for(const [id,max] of [['raceClaimTwo',2],['raceClaimThree',3],['raceClaimCity',2]])document.getElementById(id).addEventListener('input',e=>{e.target.value=digits(e.target.value).slice(0,max)});
     document.getElementById('raceClaimLetter').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[0-9۰-۹٠-٩\s]/g,'').slice(0,1)});
-    claimForm.addEventListener('submit',async e=>{e.preventDefault();const name=document.getElementById('raceClaimName').value.trim(),two=digits(document.getElementById('raceClaimTwo').value),letter=document.getElementById('raceClaimLetter').value.trim(),three=digits(document.getElementById('raceClaimThree').value),city=digits(document.getElementById('raceClaimCity').value);
-      if(!name||two.length!==2||!letter||three.length!==3||city.length!==2){claimStatus.textContent='نام و همه بخش‌های پلاک رو کامل وارد کن.';return}
-      if(!window.supabase||!window.MONT_SUPABASE_URL||!window.MONT_SUPABASE_ANON_KEY){claimStatus.textContent='اتصال پایگاه داده آماده نیست؛ جایزه هنوز ثبت نشده. با مجموعه تماس بگیر.';return}
-      const plate=two+letter+three+city;const btn=document.getElementById('raceClaimSubmit');btn.disabled=true;claimStatus.textContent='در حال بررسی پلاک و ثبت جایزه…';
-      try{const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);const {data,error}=await client.rpc('claim_race_discount',{p_full_name:name,p_plate:plate});if(error)throw error;const result=Array.isArray(data)?data[0]:data;if(!result?.ok)throw new Error(result?.message||'ثبت جایزه انجام نشد.');claimResult.hidden=false;claimResult.replaceChildren();
-        if(result.is_registered){claimResult.textContent='پلاک در سیستم صافکاری ثبت شده است. تخفیف ۵٪ برای بررسی و تأیید در پنل مدیریت ثبت شد.';claimStatus.textContent='اطلاعات برای مدیر ارسال شد.';}else{claimResult.append(document.createTextNode('پلاک در سیستم ثبت نبود؛ کد پیگیری اختصاصی شماست. این کد را حتماً ذخیره کن و در جای امن نگه دار؛ اگر گم شود بازیابی آن دشوار خواهد بود.'));const strong=document.createElement('strong');strong.textContent=result.tracking_code;claimResult.append(strong);claimStatus.textContent='کد پیگیری صادر شد.';}
-        claimForm.querySelectorAll('input').forEach(x=>x.disabled=true);btn.textContent='اطلاعات ثبت شد';playTone(980,.16);setTimeout(()=>playTone(1320,.22),170);
-      }catch(err){console.error(err);claimStatus.textContent='ثبت انجام نشد: '+(err.message||'خطای اتصال')+'؛ لطفاً دوباره تلاش کن.';btn.disabled=false}
+
+    async function submitRaceClaim(name, plate, isFinal){
+      if(claimInProgress)return;
+      if(!window.supabase||!window.MONT_SUPABASE_URL||!window.MONT_SUPABASE_ANON_KEY){
+        claimStatus.textContent='اتصال پایگاه داده آماده نیست؛ اطلاعات ثبت نشد. تنظیمات Supabase را بررسی کن.'; 
+        if(isFinal)openClaimForm(); return;
+      }
+      claimInProgress=true;
+      const btn=document.getElementById('raceClaimSubmit'); if(btn)btn.disabled=true;
+      claimStatus.textContent='در حال بررسی پلاک و ثبت تخفیف…';
+      try{
+        const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
+        const {data,error}=await client.rpc('claim_race_discount',{p_full_name:name,p_plate:plate});
+        if(error)throw error;
+        const result=Array.isArray(data)?data[0]:data;
+        if(!result?.ok)throw new Error(result?.message||'ثبت جایزه انجام نشد.');
+        claimResult.hidden=false;claimResult.replaceChildren();
+        if(result.is_registered){
+          claimResult.textContent='پلاک در سیستم صافکاری ثبت شده است؛ درخواست تخفیف ۵٪ برای مدیر ارسال شد.';
+          claimStatus.textContent='تخفیف برای بررسی و اعمال توسط مدیر ثبت شد.';
+        }else{
+          claimResult.append(document.createTextNode('ثبت‌نام جدید انجام شد. کد پیگیری اختصاصی‌ات را ذخیره کن: '));
+          const strong=document.createElement('strong');strong.textContent=result.tracking_code;claimResult.append(strong);
+          claimStatus.textContent='اطلاعات ثبت‌نام و درخواست تخفیف برای پنل مدیریت ارسال شد.';
+        }
+        if(isFinal){closeClaimForm();messageEl.textContent='جایزه ۵٪ ثبت شد؛ نتیجه در پنل مدیریت قابل پیگیری است.';}
+        else {
+          registrationDetails={name,plate};
+          closeClaimForm();
+          claimStatus.textContent='اطلاعات ذخیره شد؛ بازی ادامه پیدا می‌کند. در ۳۰۰۰ امتیاز تخفیف ثبت می‌شود.';
+          running=true; lastTime=performance.now(); animationId=requestAnimationFrame(update);
+          prizeEl.textContent='اطلاعات ثبت شد؛ تا ۳۰۰۰ امتیاز ادامه بده تا تخفیف ۵٪ ثبت شود.';
+        }
+        playTone(980,.16);setTimeout(()=>playTone(1320,.22),170);
+      }catch(err){
+        console.error(err);claimStatus.textContent='ثبت انجام نشد: '+(err.message||'خطای اتصال')+'؛ دوباره تلاش کن.';
+        if(btn)btn.disabled=false;
+        if(isFinal)openClaimForm();
+      }finally{claimInProgress=false;}
+    }
+
+    claimForm.addEventListener('submit',async e=>{
+      e.preventDefault();
+      const name=document.getElementById('raceClaimName').value.trim(),two=digits(document.getElementById('raceClaimTwo').value),letter=document.getElementById('raceClaimLetter').value.trim(),three=digits(document.getElementById('raceClaimThree').value),city=digits(document.getElementById('raceClaimCity').value);
+      if(!name||two.length!==2||!letter||three.length!==3||city.length!==2){claimStatus.textContent='نام و همه بخش‌های پلاک رو کامل وارد کن.';return;}
+      const plate=two+letter+three+city;
+      if(score < 3000 && registrationCheckpointShown){
+        registrationDetails={name,plate};
+        closeClaimForm();
+        running=true;lastTime=performance.now();animationId=requestAnimationFrame(update);
+        prizeEl.textContent='اطلاعات ثبت شد؛ تا ۳۰۰۰ امتیاز ادامه بده تا تخفیف ۵٪ ثبت شود.';
+        return;
+      }
+      await submitRaceClaim(name,plate,true);
     });
 
     function startGame() {
@@ -1056,13 +1103,16 @@ async function askMONAI(message) {
         playerLane = 1;
         obstacles = [];
         score = 0;
+        registrationDetails = null;
+        registrationCheckpointShown = false;
+        claimInProgress = false;
         spawnTimer = 0;
         roadOffset = 0;
         lastTime = performance.now();
         running = true;
 
         scoreEl.textContent = "0";
-        prizeEl.textContent = "🏆 جایزه: تخفیف ۵٪ با کسب ۳۰۰۰ امتیاز";
+        prizeEl.textContent = "🏆 در ۱۰۰۰ امتیاز ثبت‌نام کن؛ در ۳۰۰۰ امتیاز تخفیف ۵٪ بگیر";
         overlay.classList.add("hidden");
 
         playTone(500, 0.1);
