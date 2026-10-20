@@ -683,7 +683,28 @@ async function askMONAI(message) {
     });
 })();
 </script>
-    <script>
+
+<div id="raceClaimModal" class="race-claim-modal" aria-hidden="true">
+ <form id="raceClaimForm" class="race-claim-card">
+  <button type="button" id="raceClaimClose" class="race-claim-close" aria-label="بستن">×</button>
+  <div class="race-claim-kicker">MONT AZERI · 5% REWARD</div><h3>🏆 تبریک، راننده!</h3>
+  <p>۳۰۰۰ امتیاز گرفتی. برای ثبت جایزه، اطلاعاتت رو وارد کن.</p>
+  <label>نام و نام خانوادگی<input id="raceClaimName" required maxlength="100" autocomplete="name" placeholder="مثلاً علی رضایی"></label>
+  <label>شماره پلاک خودرو</label><div class="race-claim-plate" dir="ltr">
+   <input id="raceClaimTwo" inputmode="numeric" maxlength="2" required placeholder="۱۲" aria-label="دو رقم اول پلاک">
+   <input id="raceClaimLetter" maxlength="1" required placeholder="ب" aria-label="حرف پلاک">
+   <input id="raceClaimThree" inputmode="numeric" maxlength="3" required placeholder="۳۴۵" aria-label="سه رقم پلاک">
+   <input id="raceClaimCity" inputmode="numeric" maxlength="2" required placeholder="۶۷" aria-label="کد شهر">
+  </div>
+  <button class="race-btn race-claim-submit" id="raceClaimSubmit" type="submit">ثبت اطلاعات و دریافت نتیجه</button>
+  <p id="raceClaimStatus" role="status" aria-live="polite"></p><div id="raceClaimResult" class="race-claim-result" hidden></div>
+ </form>
+</div>
+<style>
+.race-claim-modal{position:fixed;inset:0;z-index:10000;display:none;align-items:center;justify-content:center;padding:16px;background:#02080bdc;backdrop-filter:blur(14px)}.race-claim-modal.open{display:flex;animation:raceFadeIn .3s ease}.race-claim-card{position:relative;width:min(480px,100%);padding:25px;border:1px solid #20d6c5a8;border-radius:24px;background:linear-gradient(145deg,#102c33f2,#071116f5);box-shadow:0 25px 90px #000b,0 0 45px #20d6c52b;animation:raceCardIn .55s cubic-bezier(.2,.8,.2,1)}.race-claim-card h3{font-size:25px;margin:10px 0;color:#aafff5}.race-claim-card p{font-size:13px;line-height:1.9;color:#a8c6ca}.race-claim-kicker{font-size:10px;letter-spacing:2px;color:#20d6c5}.race-claim-close{position:absolute;left:13px;top:12px;border:1px solid #ffffff25;background:#ffffff0b;color:white;border-radius:50%;width:35px;height:35px;font-size:22px}.race-claim-card label{display:block;font-size:12px;color:#b9d6d8;margin:13px 0}.race-claim-card input{display:block;width:100%;margin-top:7px;padding:12px;border-radius:12px;border:1px solid #23545b;background:#061317;color:#efffff;min-width:0}.race-claim-plate{display:grid;grid-template-columns:1fr .8fr 1.25fr .9fr;gap:7px}.race-claim-plate input{text-align:center}.race-claim-submit{width:100%;margin-top:10px}.race-claim-result{padding:15px;margin-top:12px;border:1px solid #20d6c58a;border-radius:15px;background:#0a3530;color:#dffff8;line-height:1.9;font-size:13px;overflow-wrap:anywhere}.race-claim-result strong{display:block;font-size:24px;letter-spacing:3px;color:#83ffcb;margin:8px 0}.race-claim-card button:disabled{opacity:.55}.race-claim-modal input:focus{outline:2px solid #20d6c5;outline-offset:1px}@keyframes raceFadeIn{from{opacity:0}to{opacity:1}}@keyframes raceCardIn{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+</style>
+
+<script>
 (() => {
     const canvas = document.getElementById("raceCanvas");
     const ctx = canvas.getContext("2d");
@@ -803,23 +824,24 @@ async function askMONAI(message) {
         ctx.setLineDash([]);
     }
 
+    function drawObstacle(o) {
+        const x=laneW*o.lane+laneW/2,y=o.y;ctx.save();ctx.translate(x,y);
+        if(o.type==='truck'){
+          ctx.shadowColor=o.color;ctx.shadowBlur=10;ctx.fillStyle='#111a1d';ctx.fillRect(-19,-29,7,16);ctx.fillRect(12,-29,7,16);ctx.fillRect(-19,13,7,16);ctx.fillRect(12,13,7,16);
+          ctx.fillStyle=o.color;ctx.beginPath();ctx.roundRect(-15,-31,30,62,5);ctx.fill();ctx.fillStyle='#263c43';ctx.fillRect(-11,-24,22,24);ctx.fillStyle='#d9f7ff';ctx.fillRect(-10,-21,4,5);ctx.fillRect(6,-21,4,5);ctx.fillStyle='#ffefb1';ctx.fillRect(-10,23,5,4);ctx.fillRect(5,23,5,4);ctx.fillStyle='#e9ffff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('TRUCK',0,8);
+        } else if(o.type==='motor'){
+          ctx.shadowColor='#ffcf67';ctx.shadowBlur=8;ctx.fillStyle='#111';ctx.beginPath();ctx.arc(0,-18,7,0,Math.PI*2);ctx.arc(0,19,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle=o.color;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-18);ctx.lineTo(-8,-2);ctx.lineTo(2,8);ctx.lineTo(0,19);ctx.moveTo(-8,-2);ctx.lineTo(8,-6);ctx.stroke();ctx.fillStyle='#ffd58b';ctx.beginPath();ctx.arc(2,-8,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#17232b';ctx.fillRect(-4,-1,9,13);
+        } else if(o.type==='pedestrian'){
+          ctx.shadowColor='#ff6485';ctx.shadowBlur=10;ctx.fillStyle='#f2c9a5';ctx.beginPath();ctx.arc(0,-19,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle=o.color;ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(0,8);ctx.moveTo(0,-5);ctx.lineTo(-11,2);ctx.moveTo(0,-5);ctx.lineTo(10,1);ctx.moveTo(0,8);ctx.lineTo(-8,23);ctx.moveTo(0,8);ctx.lineTo(8,23);ctx.stroke();ctx.fillStyle='#fff';ctx.fillRect(-5,-23,10,2);
+        } else drawCar(0,0,o.color);
+        ctx.restore();
+    }
     function drawScene() {
         drawRoad();
-
-        obstacles.forEach(o => {
-            drawCar(
-                laneW * o.lane + laneW / 2,
-                o.y,
-                o.color
-            );
-        });
-
-        drawCar(
-            laneW * lane + laneW / 2,
-            H - 75,
-            "#20d6c5",
-            true
-        );
+        obstacles.forEach(drawObstacle);
+        // subtle headlight glow around player
+        const px=laneW*lane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
+        drawCar(px,H-75,'#20d6c5',true);
     }
 
     function move(direction) {
@@ -894,10 +916,9 @@ async function askMONAI(message) {
         overlay.classList.remove("hidden");
 
         if (won) {
-            prizeEl.textContent =
-                "🎉 امتیاز ۳۰۰۰ ثبت شد! برای تأیید تخفیف ۵٪ با مجموعه تماس بگیر.";
-            playTone(880, 0.18);
-            setTimeout(() => playTone(1100, 0.22), 180);
+            prizeEl.textContent = "🎉 ۳۰۰۰ امتیاز! اطلاعاتت رو وارد کن تا جایزه ۵٪ بررسی و ثبت بشه.";
+            playTone(880, 0.18); setTimeout(() => playTone(1100, 0.22), 180);
+            openClaimForm();
         } else {
             playTone(130, 0.35, "sawtooth", 0.06);
         }
@@ -912,18 +933,7 @@ async function askMONAI(message) {
         score += dt * 40;
         scoreEl.textContent = Math.floor(score);
 
-        if (score >= 3000) {
-    scoreEl.textContent = Math.floor(score);
-
-    if (!localStorage.getItem("montazeriRacePrize")) {
-        localStorage.setItem("montazeriRacePrize", "earned");
-        prizeEl.textContent =
-            "🏆 تبریک! جایزه تخفیف ۵٪ رو گرفتی؛ بازی ادامه داره ، از صفحه اسکرین‌شات بگیر و به ما نشون بده!";
-        playTone(880, 0.18);
-
-        setTimeout(() => playTone(1100, 0.22), 180);
-    }
-}
+        if (score >= 3000) { score = 3000; scoreEl.textContent = '3000'; finishGame(true); drawScene(); return; }
 
         const speed = 300 + Math.min(score * 0.35, 420);
         roadOffset = (roadOffset + speed * dt) % 50;
@@ -943,13 +953,10 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
         newLane = previousLane;
     }
 }
-            obstacles.push({
-                lane: newLane,
-                y: -35,
-                color: ["#e75d52", "#e9b84b", "#8b83f6"][
-                    Math.floor(Math.random() * 3)
-                ]
-            });
+            const roll=Math.random();
+            const type=roll<0.24?'truck':roll<0.49?'motor':roll<0.68?'pedestrian':'car';
+            obstacles.push({lane:newLane,y:-45,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]});
+            if(type==='pedestrian') playTone(720,.045,'triangle',.012);
         }
 
         obstacles.forEach(o => o.y += speed * dt);
@@ -960,7 +967,7 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
         for (const o of obstacles) {
             if (
                 o.lane === lane &&
-                Math.abs(o.y - playerY) < 42
+                Math.abs(o.y - playerY) < (o.type==='truck'?48:o.type==='pedestrian'?38:43)
             ) {
                 finishGame(false);
                 drawScene();
@@ -988,6 +995,23 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
         drawScene();
         animationId = requestAnimationFrame(update);
     }
+
+    const claimModal=document.getElementById('raceClaimModal'), claimForm=document.getElementById('raceClaimForm');
+    const claimStatus=document.getElementById('raceClaimStatus'), claimResult=document.getElementById('raceClaimResult');
+    const digits=v=>String(v||'').replace(/[۰-۹]/g,c=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/\D/g,'');
+    function openClaimForm(){claimModal.classList.add('open');claimModal.setAttribute('aria-hidden','false');claimResult.hidden=true;claimStatus.textContent='';claimForm.querySelectorAll('input').forEach(x=>x.disabled=false);document.getElementById('raceClaimSubmit').disabled=false;}
+    document.getElementById('raceClaimClose').addEventListener('click',()=>{claimModal.classList.remove('open');claimModal.setAttribute('aria-hidden','true')});
+    for(const [id,max] of [['raceClaimTwo',2],['raceClaimThree',3],['raceClaimCity',2]])document.getElementById(id).addEventListener('input',e=>{e.target.value=digits(e.target.value).slice(0,max)});
+    document.getElementById('raceClaimLetter').addEventListener('input',e=>{e.target.value=e.target.value.replace(/[0-9۰-۹٠-٩\s]/g,'').slice(0,1)});
+    claimForm.addEventListener('submit',async e=>{e.preventDefault();const name=document.getElementById('raceClaimName').value.trim(),two=digits(document.getElementById('raceClaimTwo').value),letter=document.getElementById('raceClaimLetter').value.trim(),three=digits(document.getElementById('raceClaimThree').value),city=digits(document.getElementById('raceClaimCity').value);
+      if(!name||two.length!==2||!letter||three.length!==3||city.length!==2){claimStatus.textContent='نام و همه بخش‌های پلاک رو کامل وارد کن.';return}
+      if(!window.supabase||!window.MONT_SUPABASE_URL||!window.MONT_SUPABASE_ANON_KEY){claimStatus.textContent='اتصال پایگاه داده آماده نیست؛ جایزه هنوز ثبت نشده. با مجموعه تماس بگیر.';return}
+      const plate=two+letter+three+city;const btn=document.getElementById('raceClaimSubmit');btn.disabled=true;claimStatus.textContent='در حال بررسی پلاک و ثبت جایزه…';
+      try{const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);const {data,error}=await client.rpc('claim_race_discount',{p_full_name:name,p_plate:plate});if(error)throw error;const result=Array.isArray(data)?data[0]:data;if(!result?.ok)throw new Error(result?.message||'ثبت جایزه انجام نشد.');claimResult.hidden=false;claimResult.replaceChildren();
+        if(result.is_registered){claimResult.textContent='پلاک در سیستم صافکاری ثبت شده است. تخفیف ۵٪ برای بررسی و تأیید در پنل مدیریت ثبت شد.';claimStatus.textContent='اطلاعات برای مدیر ارسال شد.';}else{claimResult.append(document.createTextNode('پلاک در سیستم ثبت نبود؛ کد پیگیری اختصاصی شماست. این کد را حتماً ذخیره کن و در جای امن نگه دار؛ اگر گم شود بازیابی آن دشوار خواهد بود.'));const strong=document.createElement('strong');strong.textContent=result.tracking_code;claimResult.append(strong);claimStatus.textContent='کد پیگیری صادر شد.';}
+        claimForm.querySelectorAll('input').forEach(x=>x.disabled=true);btn.textContent='اطلاعات ثبت شد';playTone(980,.16);setTimeout(()=>playTone(1320,.22),170);
+      }catch(err){console.error(err);claimStatus.textContent='ثبت انجام نشد: '+(err.message||'خطای اتصال')+'؛ لطفاً دوباره تلاش کن.';btn.disabled=false}
+    });
 
     function startGame() {
         cancelAnimationFrame(animationId);
