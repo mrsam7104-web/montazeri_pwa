@@ -723,6 +723,7 @@ async function askMONAI(message) {
     const laneW = W / 3;
 
     let lane = 1;
+    let playerLane = 1; // eased visual position for smooth steering
     let obstacles = [];
     let score = 0;
     let best = 0;
@@ -840,7 +841,7 @@ async function askMONAI(message) {
         drawRoad();
         obstacles.forEach(drawObstacle);
         // subtle headlight glow around player
-        const px=laneW*lane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
+        const px=laneW*playerLane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
         drawCar(px,H-75,'#20d6c5',true);
     }
 
@@ -935,27 +936,29 @@ async function askMONAI(message) {
 
         if (score >= 3000) { score = 3000; scoreEl.textContent = '3000'; finishGame(true); drawScene(); return; }
 
-        const speed = 300 + Math.min(score * 0.35, 420);
+        // Slightly gentler speed curve; the game remains challenging at higher scores.
+        const speed = 280 + Math.min(score * 0.30, 350);
         roadOffset = (roadOffset + speed * dt) % 50;
         spawnTimer += dt;
+        // Smoothly interpolate the car toward the selected lane instead of snapping.
+        playerLane += (lane - playerLane) * Math.min(1, dt * 11);
+        if (Math.abs(lane - playerLane) < 0.006) playerLane = lane;
 
-        const spawnInterval = Math.max(0.24, 0.72 - score / 2200);
+        const spawnInterval = Math.max(0.43, 0.94 - score / 5200);
+        const enoughSpacing = obstacles.length === 0 || obstacles[obstacles.length - 1].y > 145;
 
-        if (spawnTimer >= spawnInterval) {
+        if (spawnTimer >= spawnInterval && enoughSpacing) {
             spawnTimer = 0;
-
             let newLane = Math.floor(Math.random() * 3);
-
-if (Math.random() < 0.35 && obstacles.length > 0) {
-    const previousLane = obstacles[obstacles.length - 1].lane;
-
-    if (Math.random() < 0.5) {
-        newLane = previousLane;
-    }
-}
+            // Reduce back-to-back blockers in the same lane.
+            if (obstacles.length > 0 && Math.random() < 0.62) {
+                const previousLane = obstacles[obstacles.length - 1].lane;
+                const alternatives = [0,1,2].filter(n => n !== previousLane);
+                newLane = alternatives[Math.floor(Math.random() * alternatives.length)];
+            }
             const roll=Math.random();
-            const type=roll<0.24?'truck':roll<0.49?'motor':roll<0.68?'pedestrian':'car';
-            obstacles.push({lane:newLane,y:-45,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]});
+            const type=roll<0.22?'truck':roll<0.45?'motor':roll<0.65?'pedestrian':'car';
+            obstacles.push({lane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]});
             if(type==='pedestrian') playTone(720,.045,'triangle',.012);
         }
 
@@ -967,7 +970,7 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
         for (const o of obstacles) {
             if (
                 o.lane === lane &&
-                Math.abs(o.y - playerY) < (o.type==='truck'?48:o.type==='pedestrian'?38:43)
+                Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37)
             ) {
                 finishGame(false);
                 drawScene();
@@ -1017,6 +1020,7 @@ if (Math.random() < 0.35 && obstacles.length > 0) {
         cancelAnimationFrame(animationId);
 
         lane = 1;
+        playerLane = 1;
         obstacles = [];
         score = 0;
         spawnTimer = 0;
