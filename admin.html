@@ -34,9 +34,6 @@
 <div class="stat"><small>آماده تحویل</small><strong id="statReady">۰</strong><span>تکمیل ۱۰۰٪</span></div>
 <div class="stat"><small>میانگین پیشرفت</small><strong id="statProgress">۰٪</strong><span>بر اساس وضعیت ثبت‌شده</span></div>
 </section>
-<section class="panel" id="raceDiscountPanel" style="margin:0 0 18px;border-color:#146e68"><div class="panel-head"><h3>🏁 تخفیف‌های ماشین‌بازی</h3><span class="pill">ثبت‌نام بدون پلاک · جایزه ۵٪</span></div><p class="note" style="margin:0 0 12px">درخواست‌های جایزه ۵٪ در امتیاز ۳۰۰۰؛ بازی بعد از ثبت جایزه ادامه پیدا می‌کند.</p><div class="table-wrap"><table style="min-width:680px"><thead><tr><th>نام</th><th>موبایل</th><th>کد مشتری</th><th>امتیاز</th><th>تخفیف</th><th>زمان</th></tr></thead><tbody id="raceDiscountRows"><tr><td colspan="6">در حال بارگذاری…</td></tr></tbody></table></div><div class="form-actions"><button type="button" class="secondary" id="refreshRaceDiscounts">↻ تازه‌سازی درخواست‌ها</button></div></section>
-<section class="panel" id="wheelEntriesPanel" style="margin:0 0 18px;border-color:#146e68"><div class="panel-head"><h3>🎁 ثبت‌نام‌های گردونه شانس</h3><span class="pill">بدون پلاک</span></div><div class="table-wrap"><table style="min-width:680px"><thead><tr><th>نام</th><th>موبایل</th><th>کد مشتری</th><th>نتیجه</th><th>کد تخفیف</th><th>زمان</th></tr></thead><tbody id="wheelEntryRows"><tr><td colspan="6">در حال بارگذاری…</td></tr></tbody></table></div><div class="form-actions"><button type="button" class="secondary" id="refreshWheelEntries">↻ تازه‌سازی گردونه</button></div></section>
-<section class="panel" id="siteCustomersPanel" style="margin:0 0 18px;border-color:#146e68"><div class="panel-head"><h3>👤 مشتریان ثبت‌شده</h3><span class="pill">کد ثابت برای هر موبایل</span></div><div class="table-wrap"><table style="min-width:560px"><thead><tr><th>نام</th><th>موبایل</th><th>کد مشتری</th><th>ثبت</th></tr></thead><tbody id="siteCustomerRows"><tr><td colspan="4">در حال بارگذاری…</td></tr></tbody></table></div></section>
 <div class="layout">
 <main class="panel"><div class="panel-head"><h3>پرونده خودروها</h3><span class="pill" id="recordCount">۰ پرونده</span></div><input id="search" class="search" placeholder="جستجو با پلاک، کد پیگیری یا مدل خودرو..."><div class="table-wrap"><table><thead><tr><th>پلاک / خودرو</th><th>کد پیگیری</th><th>وضعیت کار</th><th>پیشرفت</th><th>عملیات</th></tr></thead><tbody id="carRows"></tbody></table></div><div class="empty" id="emptyList">هنوز خودرویی ثبت نشده. اولین پذیرش را ثبت کن.</div></main>
 <aside class="rightcol">
@@ -45,6 +42,11 @@
 </aside></div>
 <section class="panel" style="margin-top:18px" id="smsPanel"><div class="panel-head"><h3>SMS · پیام آماده مشتری</h3><span class="pill">کپی پیام</span></div><p class="note" style="margin:0 0 12px">یک خودرو را از جدول انتخاب کن؛ متن پیام با پلاک و کد پیگیری همان پرونده آماده می‌شود.</p><textarea id="smsMessage" rows="6" readonly class="field" style="width:100%;line-height:1.9;resize:vertical" placeholder="ابتدا یک خودرو انتخاب کن."></textarea><div class="form-actions"><button class="primary" type="button" id="copySms">کپی متن پیامک</button></div></section>
 <section class="panel" style="margin-top:18px"><div class="panel-head"><h3>مشخصات خرابی و شرح کار</h3><button class="secondary" id="addDamage">＋ افزودن ردیف خرابی</button></div><div id="damageArea" class="table-wrap"><div class="empty">برای ثبت خرابی‌ها، یک خودرو انتخاب کن.</div></div><div class="form-actions"><button class="primary" id="saveDamage">ذخیره شرح خرابی‌ها</button></div></section>
+
+<section class="panel" id="raceClaimsPanel" style="margin-top:18px"><div class="panel-head"><h3>تخفیف‌های ماشین‌بازی</h3><button class="secondary" type="button" onclick="loadAdminLists()">به‌روزرسانی</button></div><p class="note">ویرایش یا حذف فقط پس از اتصال مدیر به Supabase انجام می‌شود.</p><div class="table-wrap"><table><thead><tr><th>نام</th><th>موبایل</th><th>کد مشتری</th><th>امتیاز</th><th>تخفیف</th><th>عملیات</th></tr></thead><tbody id="raceClaimRows"><tr><td colspan="6">برای نمایش اطلاعات، وارد پنل ابری شو.</td></tr></tbody></table></div></section>
+<section class="panel" id="wheelEntriesPanel" style="margin-top:18px"><div class="panel-head"><h3>ثبت‌نام گردونه شانس</h3><button class="secondary" type="button" onclick="loadAdminLists()">به‌روزرسانی</button></div><div class="table-wrap"><table><thead><tr><th>نام</th><th>موبایل</th><th>کد مشتری</th><th>جایزه</th><th>کد تخفیف</th><th>عملیات</th></tr></thead><tbody id="wheelEntryRows"><tr><td colspan="6">برای نمایش اطلاعات، وارد پنل ابری شو.</td></tr></tbody></table></div></section>
+<section class="panel" id="siteCustomersPanel" style="margin-top:18px"><div class="panel-head"><h3>مشتریان ثبت‌شده</h3><button class="secondary" type="button" onclick="loadAdminLists()">به‌روزرسانی</button></div><div class="table-wrap"><table><thead><tr><th>نام</th><th>موبایل</th><th>کد مشتری ۴ رقمی</th><th>تاریخ ثبت</th><th>عملیات</th></tr></thead><tbody id="siteCustomerRows"><tr><td colspan="5">برای نمایش اطلاعات، وارد پنل ابری شو.</td></tr></tbody></table></div></section>
+
 <div class="foot">MONT AZERI AUTO BODY REPAIR · ساخته‌شده برای مدیریت داخلی مجموعه</div>
 </div>
 <div class="modal" id="carModal"><div class="modalbox"><div class="modalhead"><h3 id="modalTitle">ثبت خودروی جدید</h3><button class="close" id="closeModal">×</button></div><form id="carForm"><input type="hidden" id="carId"><div class="formgrid">
@@ -96,32 +98,6 @@ function escapeHTML(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','
 function current(){return cars.find(c=>c.id===selectedId)}
 function stageOf(c){return stages[Math.max(0,Math.min(stages.length-1,c.stage||0))]}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2400)}
-async function loadRaceDiscountClaims(){
- const tbody=$('raceDiscountRows'); if(!tbody)return;
- if(!sb){tbody.innerHTML='<tr><td colspan="6">ابتدا اتصال مدیر به Supabase برقرار شود.</td></tr>';return}
- const {data,error}=await sb.from('race_discount_claims').select('id,full_name,phone,customer_code,score,discount_percent,created_at').order('created_at',{ascending:false}).limit(200);
- if(error){tbody.innerHTML='<tr><td colspan="6">جدول درخواست‌های بازی آماده نیست؛ SQL به‌روزشده را اجرا کن.</td></tr>';console.warn('race_discount_claims:',error.message);return}
- if(!data?.length){tbody.innerHTML='<tr><td colspan="6">هنوز درخواست تخفیفی ثبت نشده است.</td></tr>';return}
- tbody.innerHTML=data.map(r=>`<tr><td>${escapeHTML(r.full_name||'—')}</td><td>${escapeHTML(r.phone||'—')}</td><td><strong class="plate">${escapeHTML(r.customer_code||'—')}</strong></td><td>${fa(r.score||3000)}</td><td><span class="status">${Number(r.discount_percent)||5}٪</span></td><td>${escapeHTML(new Date(r.created_at).toLocaleString('fa-IR'))}</td></tr>`).join('');
-}
-async function loadWheelEntries(){
- const tbody=$('wheelEntryRows');if(!tbody)return;if(!sb){tbody.innerHTML='<tr><td colspan="6">ابتدا اتصال مدیر برقرار شود.</td></tr>';return}
- const {data,error}=await sb.from('discount_wheel_entries').select('full_name,phone,customer_code,prize_label,coupon_code,created_at').order('created_at',{ascending:false}).limit(200);
- if(error){tbody.innerHTML='<tr><td colspan="6">خطا در خواندن اطلاعات گردونه؛ SQL را بررسی کن.</td></tr>';console.warn(error.message);return}
- if(!data?.length){tbody.innerHTML='<tr><td colspan="6">هنوز ثبت‌نامی وجود ندارد.</td></tr>';return}
- tbody.innerHTML=data.map(r=>`<tr><td>${escapeHTML(r.full_name||'—')}</td><td>${escapeHTML(r.phone||'—')}</td><td><strong class="plate">${escapeHTML(r.customer_code||'—')}</strong></td><td>${escapeHTML(r.prize_label||'—')}</td><td>${escapeHTML(r.coupon_code||'—')}</td><td>${escapeHTML(new Date(r.created_at).toLocaleString('fa-IR'))}</td></tr>`).join('');
-}
-async function loadSiteCustomers(){
- const tbody=$('siteCustomerRows');if(!tbody)return;if(!sb){tbody.innerHTML='<tr><td colspan="4">ابتدا اتصال مدیر برقرار شود.</td></tr>';return}
- const {data,error}=await sb.from('site_customers').select('full_name,phone,customer_code,created_at').order('created_at',{ascending:false}).limit(300);
- if(error){tbody.innerHTML='<tr><td colspan="4">خطا در دریافت مشتریان؛ SQL به‌روزشده را اجرا کن.</td></tr>';console.warn(error.message);return}
- if(!data?.length){tbody.innerHTML='<tr><td colspan="4">هنوز مشتری ثبت نشده است.</td></tr>';return}
- tbody.innerHTML=data.map(r=>`<tr><td>${escapeHTML(r.full_name||'—')}</td><td>${escapeHTML(r.phone||'—')}</td><td><strong class="plate">${escapeHTML(r.customer_code||'—')}</strong></td><td>${escapeHTML(new Date(r.created_at).toLocaleString('fa-IR'))}</td></tr>`).join('');
-}
-async function loadRegistrationPanels(){await Promise.all([loadRaceDiscountClaims(),loadWheelEntries(),loadSiteCustomers()])}
-$('refreshRaceDiscounts')?.addEventListener('click',loadRegistrationPanels);
-$('refreshWheelEntries')?.addEventListener('click',loadRegistrationPanels);
-
 function render(){
  const q=$('search').value.trim().toLowerCase(),filtered=cars.filter(c=>[c.plate,c.phone,c.model,c.trackingCode].join(' ').toLowerCase().includes(q));
  $('carRows').innerHTML=filtered.map(c=>{let st=stageOf(c),cl=st.pct===100?'done':st.pct===0?'wait':'';return `<tr data-id="${c.id}" class="${c.id===selectedId?'selected':''}"><td><span class="plate">${escapeHTML(c.plate)}</span><span class="sub">${escapeHTML(c.model||'مدل ثبت نشده')}</span></td><td><strong style="color:var(--cyan);letter-spacing:3px">${escapeHTML(c.trackingCode||'----')}</strong><button class="mini-btn copy-code" data-code="${escapeHTML(c.trackingCode||'')}" style="margin-right:6px">کپی</button></td><td><span class="status ${cl}">${escapeHTML(st.name)}</span></td><td>${fa(st.pct)}٪</td><td><button class="mini-btn edit" data-id="${c.id}">ویرایش</button> <button class="mini-btn delete" data-id="${c.id}">×</button></td></tr>`}).join('');
@@ -199,7 +175,7 @@ async function initCloudAdmin(){
  if(!window.supabase?.createClient){$('cloudLogin').style.display='flex';msg.textContent='کتابخانه اتصال بارگذاری نشد؛ اینترنت را بررسی کن و صفحه را دوباره باز کن.';return}
  sb=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
  const {data:{session}}=await sb.auth.getSession();
- if(session){$('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();await loadRegistrationPanels();return}
+ if(session){$('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();await loadAdminLists();return}
  $('cloudLogin').style.display='flex';
 }
 function subscribeAdminChanges(){
@@ -213,9 +189,46 @@ $('cloudLoginForm').addEventListener('submit',async e=>{e.preventDefault();const
  if(!sb)sb=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
  const {data,error}=await sb.auth.signInWithPassword({email:$('cloudEmail').value.trim(),password:$('cloudPassword').value});
  if(error){msg.textContent='ورود انجام نشد. ایمیل/رمز و فعال بودن حساب مدیر را بررسی کن.';return}
- $('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();await loadRegistrationPanels();
+ $('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();await loadAdminLists();
 });
-initCloudAdmin().catch(e=>{console.error(e);$('cloudLogin').style.display='flex';$('cloudLoginMsg').textContent='اتصال ابری شروع نشد؛ تنظیمات و اتصال اینترنت را بررسی کن.';});
+initCloudAdmin().then(()=>loadAdminLists()).catch(e=>{console.error(e);$('cloudLogin').style.display='flex';$('cloudLoginMsg').textContent='اتصال ابری شروع نشد؛ تنظیمات و اتصال اینترنت را بررسی کن.';});
+
+async function loadAdminLists(){
+ if(!sb){toast('ابتدا وارد پنل ابری شو');return}
+ const targets=[['race_discount_claims','raceClaimRows',6],['discount_wheel_entries','wheelEntryRows',6],['site_customers','siteCustomerRows',5]];
+ for(const [table,bodyId,cols] of targets){const body=$(bodyId);body.innerHTML=`<tr><td colspan="${cols}">در حال دریافت...</td></tr>`;
+  const {data,error}=await sb.from(table).select('*').order('created_at',{ascending:false}).limit(300);
+  if(error){console.error(table,error);body.innerHTML=`<tr><td colspan="${cols}">خطا در دریافت؛ دسترسی SQL مدیر را اجرا کن.</td></tr>`;continue}
+  if(!data?.length){body.innerHTML=`<tr><td colspan="${cols}">موردی ثبت نشده است.</td></tr>`;continue}
+  body.innerHTML=data.map(r=>{
+   const id=escapeHTML(String(r.id));
+   if(table==='race_discount_claims')return `<tr><td>${escapeHTML(r.full_name||'')}</td><td>${escapeHTML(r.phone||'')}</td><td>${escapeHTML(r.customer_code||'')}</td><td>${fa(r.score||0)}</td><td>${fa(r.discount_percent||5)}٪</td><td><button class="mini-btn" onclick="editAdminRecord('race_discount_claims','${id}')">ویرایش</button> <button class="mini-btn danger" onclick="deleteAdminRecord('race_discount_claims','${id}')">حذف</button></td></tr>`;
+   if(table==='discount_wheel_entries')return `<tr><td>${escapeHTML(r.full_name||'')}</td><td>${escapeHTML(r.phone||'')}</td><td>${escapeHTML(r.customer_code||'')}</td><td>${escapeHTML(r.prize_label||'')}</td><td>${escapeHTML(r.coupon_code||'—')}</td><td><button class="mini-btn" onclick="editAdminRecord('discount_wheel_entries','${id}')">ویرایش</button> <button class="mini-btn danger" onclick="deleteAdminRecord('discount_wheel_entries','${id}')">حذف</button></td></tr>`;
+   return `<tr><td>${escapeHTML(r.full_name||'')}</td><td>${escapeHTML(r.phone||'')}</td><td><strong>${escapeHTML(r.customer_code||'')}</strong></td><td>${escapeHTML(r.created_at?new Date(r.created_at).toLocaleDateString('fa-IR'):'—')}</td><td><button class="mini-btn" onclick="editAdminRecord('site_customers','${id}')">ویرایش</button> <button class="mini-btn danger" onclick="deleteAdminRecord('site_customers','${id}')">حذف</button></td></tr>`;
+  }).join('');
+ }
+}
+async function editAdminRecord(table,id){
+ if(!sb)return;const {data,error}=await sb.from(table).select('*').eq('id',id).maybeSingle();if(error||!data){toast('اطلاعات برای ویرایش دریافت نشد');return}
+ const name=prompt('نام و نام خانوادگی:',data.full_name??'');if(name===null)return;
+ const phone=prompt('شماره موبایل:',data.phone??'');if(phone===null)return;
+ const patch={full_name:name.trim(),phone:phone.trim()};
+ if(table==='site_customers'){
+  let code=prompt('کد مشتری ۴ رقمی:',String(data.customer_code??''));if(code===null)return;code=code.trim();if(!/^\d{4}$/.test(code)){toast('کد مشتری باید دقیقاً ۴ رقم باشد');return}patch.customer_code=code;patch.updated_at=new Date().toISOString();
+ }else if(table==='race_discount_claims'){
+  const score=prompt('امتیاز:',String(data.score??3000));if(score===null)return;patch.score=Math.max(0,parseInt(score,10)||0);
+  const discount=prompt('درصد تخفیف (۵ یا ۸):',String(data.discount_percent??5));if(discount===null)return;patch.discount_percent=[5,8].includes(parseInt(discount,10))?parseInt(discount,10):5;
+ }else{
+  const prize=prompt('عنوان جایزه:',data.prize_label??'');if(prize===null)return;patch.prize_label=prize.trim();
+  const coupon=prompt('کد تخفیف (خالی = بدون کد):',data.coupon_code??'');if(coupon===null)return;patch.coupon_code=coupon.trim()||null;
+ }
+ const {error:upErr}=await sb.from(table).update(patch).eq('id',id);if(upErr){console.error(upErr);toast('ذخیره ویرایش ناموفق بود؛ SQL دسترسی مدیر را اجرا کن');return}toast('اطلاعات ویرایش شد');await loadAdminLists();
+}
+async function deleteAdminRecord(table,id){
+ if(!sb)return;if(!confirm('مطمئنی می‌خواهی این رکورد را برای همیشه حذف کنی؟'))return;
+ const {error}=await sb.from(table).delete().eq('id',id);if(error){console.error(error);toast('حذف انجام نشد؛ SQL دسترسی مدیر را اجرا کن');return}toast('رکورد حذف شد');await loadAdminLists();
+}
+
 </script><script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
 <script>
 (function(){const gate=document.getElementById('adminPassGate');document.getElementById('adminPassForm').addEventListener('submit',function(e){e.preventDefault();if(document.getElementById('adminPassInput').value==='1523137'){gate.style.display='none';}else{document.getElementById('adminPassError').textContent='رمز واردشده صحیح نیست.';document.getElementById('adminPassInput').value='';}});})();
