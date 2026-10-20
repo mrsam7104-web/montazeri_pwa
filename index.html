@@ -878,6 +878,8 @@ async function askMONAI(message) {
         drawRoad();
         obstacles.forEach(drawObstacle);
         // subtle headlight glow around player
+        if (!Number.isFinite(playerLane)) playerLane = Number.isFinite(lane) ? lane : 1;
+        playerLane = Math.max(0, Math.min(2, playerLane));
         const px=laneW*playerLane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
         const steeringLean = Math.max(-0.30, Math.min(0.30, (lane - playerLane) * 0.42));
         drawCar(px,H-75,'#20d6c5',true,steeringLean,exhaustClock);
@@ -967,7 +969,7 @@ async function askMONAI(message) {
     function update(time) {
         if (!running) return;
 
-        const dt = Math.max(0, Math.min((time - lastTime) / 1000 || 0, 0.032));
+        const dt = Math.min((time - lastTime) / 1000 || 0, 0.04);
         lastTime = time;
 
         score += dt * 40;
@@ -982,6 +984,8 @@ async function askMONAI(message) {
             } else {
                 running = false;
                 cancelAnimationFrame(animationId);
+                titleEl.textContent = '📝 ثبت‌نام راننده';
+                messageEl.textContent = 'برای ادامه بازی، ثبت‌نام را کامل کن یا فرم را ببند.';
                 setClaimMode('register');
                 openClaimForm();
                 drawScene();
@@ -1064,23 +1068,18 @@ async function askMONAI(message) {
 
         // Collision detection
         const playerY = H - 75;
+        if (!Number.isFinite(playerLane)) playerLane = lane;
+        if (!Number.isFinite(lane) || lane < 0 || lane > 2) lane = 1;
         const playerX = laneW * playerLane + laneW / 2;
 
-        // Collision checks use the player's visible position. During a lane change,
-        // require a closer overlap so the car does not crash just because it is
-        // smoothly passing between lane centers.
-        const playerIsSteering = Math.abs(lane - playerLane) > 0.10;
         for (const o of obstacles) {
-            const obstacleLane = (typeof o.lanePos === 'number') ? o.lanePos : o.lane;
-            const verticalHit = Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37);
-            let hit = false;
-            if (o.type === 'pedestrian') {
-                hit = Math.abs(o.x - playerX) < 23;
-            } else {
-                const laneDistance = Math.abs(obstacleLane - playerLane);
-                hit = laneDistance < (playerIsSteering ? 0.27 : 0.36);
-            }
-            if (hit && verticalHit) {
+            const hit = o.type === 'pedestrian'
+                ? Math.abs(o.x - playerX) < 20
+                : Math.abs((Number.isFinite(o.lanePos) ? o.lanePos : o.lane) - playerLane) < 0.34;
+            if (
+                hit &&
+                Math.abs(o.y - playerY) < (o.type==='truck'?34:o.type==='pedestrian'?25:30)
+            ) {
                 finishGame(false);
                 drawScene();
                 return;
