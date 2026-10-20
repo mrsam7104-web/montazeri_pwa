@@ -1151,6 +1151,37 @@ async function askMONAI(message) {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
 <script>
+// Keep the locally displayed customer code synchronized with the authoritative Supabase customer record.
+(async function syncStoredCustomerCode(){
+  const KEY='montazeriCustomer';
+  const badge=document.getElementById('customerCodeBadge');
+  const value=document.getElementById('customerCodeValue');
+  const hide=()=>{if(badge)badge.style.display='none';if(value)value.textContent=''};
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(!raw){hide();return;}
+    const saved=JSON.parse(raw);
+    if(!saved || !saved.phone){hide();return;}
+    if(!window.supabase || !window.MONT_SUPABASE_URL || !window.MONT_SUPABASE_ANON_KEY){
+      // Without a database connection we cannot safely confirm that the stored code is still valid.
+      hide(); return;
+    }
+    const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
+    const phone=String(saved.phone).replace(/[^0-9]/g,'');
+    const {data,error}=await client.from('site_customers').select('full_name,phone,customer_code').eq('phone',phone).maybeSingle();
+    if(error) throw error;
+    if(!data || !data.customer_code){localStorage.removeItem(KEY);hide();return;}
+    const fresh={...saved,full_name:data.full_name||saved.full_name,phone:data.phone||saved.phone,customer_code:data.customer_code};
+    localStorage.setItem(KEY,JSON.stringify(fresh));
+    if(value)value.textContent=data.customer_code;
+    if(badge)badge.style.display='block';
+  }catch(err){
+    console.warn('Customer code sync failed; hiding potentially stale code.',err);
+    hide();
+  }
+})();
+</script>
+<script>
 function saveWheelCustomer(c){try{const old=JSON.parse(localStorage.getItem("montazeriCustomer")||"{}");const merged={...old,...c};localStorage.setItem("montazeriCustomer",JSON.stringify(merged));const b=document.getElementById("customerCodeBadge"),v=document.getElementById("customerCodeValue");if(b&&v&&merged.customer_code){v.textContent=merged.customer_code;b.style.display="block"}}catch(_){}}
 (() => {
  const canvas=document.getElementById('wheelCanvas'),form=document.getElementById('wheelForm');
