@@ -989,18 +989,35 @@ async function askMONAI(message) {
             }
             const roll=Math.random();
             const type=roll<0.22?'truck':roll<0.45?'motor':roll<0.65?'pedestrian':'car';
-            obstacles.push({lane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]});
+            const obstacle = {lane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]};
+            if (type === 'pedestrian') {
+                // Initialize the horizontal position so the pedestrian is actually visible.
+                obstacle.x = Math.random() < 0.5 ? 22 : W - 22;
+                obstacle.crossDirection = obstacle.x < W / 2 ? 1 : -1;
+            }
+            obstacles.push(obstacle);
             if(type==='pedestrian') playTone(720,.045,'triangle',.012);
         }
 
-        obstacles.forEach(o => o.y += speed * dt);
+        obstacles.forEach(o => {
+            o.y += speed * dt;
+            if (o.type === 'pedestrian') {
+                o.x += o.crossDirection * (105 + Math.min(score * 0.025, 35)) * dt;
+                if (o.x < 22) { o.x = 22; o.crossDirection = 1; }
+                if (o.x > W - 22) { o.x = W - 22; o.crossDirection = -1; }
+            }
+        });
 
         // Collision detection
         const playerY = H - 75;
 
         for (const o of obstacles) {
+            const playerX = laneW * playerLane + laneW / 2;
+            const sameLaneOrCrossingPedestrian = o.type === 'pedestrian'
+                ? Math.abs(o.x - playerX) < 25
+                : o.lane === lane;
             if (
-                o.lane === lane &&
+                sameLaneOrCrossingPedestrian &&
                 Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37)
             ) {
                 finishGame(false);
