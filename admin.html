@@ -34,6 +34,7 @@
 <div class="stat"><small>آماده تحویل</small><strong id="statReady">۰</strong><span>تکمیل ۱۰۰٪</span></div>
 <div class="stat"><small>میانگین پیشرفت</small><strong id="statProgress">۰٪</strong><span>بر اساس وضعیت ثبت‌شده</span></div>
 </section>
+<section class="panel" id="raceDiscountPanel" style="margin:0 0 18px;border-color:#146e68"><div class="panel-head"><h3>🏁 تخفیف‌های ماشین‌بازی</h3><span class="pill">۵٪ · فقط پلاک‌های ثبت‌شده</span></div><p class="note" style="margin:0 0 12px">وقتی بازیکن به ۳۰۰۰ امتیاز برسد و پلاکش در پرونده‌های صافکاری ثبت شده باشد، درخواست تخفیف اینجا نمایش داده می‌شود. این بخش به اطلاعات خودروهای موجود دست نمی‌زند.</p><div class="table-wrap"><table style="min-width:560px"><thead><tr><th>پلاک</th><th>نام و نام خانوادگی</th><th>تخفیف</th><th>زمان درخواست</th></tr></thead><tbody id="raceDiscountRows"><tr><td colspan="4">در حال بارگذاری…</td></tr></tbody></table></div><div class="form-actions"><button type="button" class="secondary" id="refreshRaceDiscounts">↻ تازه‌سازی درخواست‌ها</button></div></section>
 <div class="layout">
 <main class="panel"><div class="panel-head"><h3>پرونده خودروها</h3><span class="pill" id="recordCount">۰ پرونده</span></div><input id="search" class="search" placeholder="جستجو با پلاک، کد پیگیری یا مدل خودرو..."><div class="table-wrap"><table><thead><tr><th>پلاک / خودرو</th><th>کد پیگیری</th><th>وضعیت کار</th><th>پیشرفت</th><th>عملیات</th></tr></thead><tbody id="carRows"></tbody></table></div><div class="empty" id="emptyList">هنوز خودرویی ثبت نشده. اولین پذیرش را ثبت کن.</div></main>
 <aside class="rightcol">
@@ -93,6 +94,16 @@ function escapeHTML(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','
 function current(){return cars.find(c=>c.id===selectedId)}
 function stageOf(c){return stages[Math.max(0,Math.min(stages.length-1,c.stage||0))]}
 function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2400)}
+async function loadRaceDiscountClaims(){
+ const tbody=$('raceDiscountRows'); if(!tbody)return;
+ if(!sb){tbody.innerHTML='<tr><td colspan="4">ابتدا اتصال مدیر به Supabase برقرار شود.</td></tr>';return}
+ const {data,error}=await sb.from('race_discount_claims').select('id,full_name,plate,discount_percent,created_at').eq('is_registered',true).order('created_at',{ascending:false}).limit(100);
+ if(error){tbody.innerHTML='<tr><td colspan="4">جدول تخفیف‌ها آماده نیست؛ فایل SQL داخل بسته را در Supabase اجرا کن.</td></tr>';console.warn('race_discount_claims:',error.message);return}
+ if(!data?.length){tbody.innerHTML='<tr><td colspan="4">هنوز درخواست تخفیف ثبت‌شده‌ای وجود ندارد.</td></tr>';return}
+ tbody.innerHTML=data.map(r=>`<tr><td><strong class="plate">${escapeHTML(r.plate||'—')}</strong></td><td>${escapeHTML(r.full_name||'—')}</td><td><span class="status">${Number(r.discount_percent)||5}٪ تخفیف</span></td><td>${escapeHTML(new Date(r.created_at).toLocaleString('fa-IR'))}</td></tr>`).join('');
+}
+$('refreshRaceDiscounts')?.addEventListener('click',loadRaceDiscountClaims);
+
 function render(){
  const q=$('search').value.trim().toLowerCase(),filtered=cars.filter(c=>[c.plate,c.phone,c.model,c.trackingCode].join(' ').toLowerCase().includes(q));
  $('carRows').innerHTML=filtered.map(c=>{let st=stageOf(c),cl=st.pct===100?'done':st.pct===0?'wait':'';return `<tr data-id="${c.id}" class="${c.id===selectedId?'selected':''}"><td><span class="plate">${escapeHTML(c.plate)}</span><span class="sub">${escapeHTML(c.model||'مدل ثبت نشده')}</span></td><td><strong style="color:var(--cyan);letter-spacing:3px">${escapeHTML(c.trackingCode||'----')}</strong><button class="mini-btn copy-code" data-code="${escapeHTML(c.trackingCode||'')}" style="margin-right:6px">کپی</button></td><td><span class="status ${cl}">${escapeHTML(st.name)}</span></td><td>${fa(st.pct)}٪</td><td><button class="mini-btn edit" data-id="${c.id}">ویرایش</button> <button class="mini-btn delete" data-id="${c.id}">×</button></td></tr>`}).join('');
@@ -170,7 +181,7 @@ async function initCloudAdmin(){
  if(!window.supabase?.createClient){$('cloudLogin').style.display='flex';msg.textContent='کتابخانه اتصال بارگذاری نشد؛ اینترنت را بررسی کن و صفحه را دوباره باز کن.';return}
  sb=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
  const {data:{session}}=await sb.auth.getSession();
- if(session){$('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();return}
+ if(session){$('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();await loadRaceDiscountClaims();return}
  $('cloudLogin').style.display='flex';
 }
 function subscribeAdminChanges(){
@@ -184,7 +195,7 @@ $('cloudLoginForm').addEventListener('submit',async e=>{e.preventDefault();const
  if(!sb)sb=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
  const {data,error}=await sb.auth.signInWithPassword({email:$('cloudEmail').value.trim(),password:$('cloudPassword').value});
  if(error){msg.textContent='ورود انجام نشد. ایمیل/رمز و فعال بودن حساب مدیر را بررسی کن.';return}
- $('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();
+ $('cloudLogin').style.display='none';await loadCloud();ensureTrackingCodes();render();subscribeAdminChanges();await loadRaceDiscountClaims();
 });
 initCloudAdmin().catch(e=>{console.error(e);$('cloudLogin').style.display='flex';$('cloudLoginMsg').textContent='اتصال ابری شروع نشد؛ تنظیمات و اتصال اینترنت را بررسی کن.';});
 </script><script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}</script>
