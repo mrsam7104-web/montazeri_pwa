@@ -967,7 +967,7 @@ async function askMONAI(message) {
     function update(time) {
         if (!running) return;
 
-        const dt = Math.min((time - lastTime) / 1000 || 0, 0.04);
+        const dt = Math.max(0, Math.min((time - lastTime) / 1000 || 0, 0.032));
         lastTime = time;
 
         score += dt * 40;
@@ -1066,14 +1066,21 @@ async function askMONAI(message) {
         const playerY = H - 75;
         const playerX = laneW * playerLane + laneW / 2;
 
+        // Collision checks use the player's visible position. During a lane change,
+        // require a closer overlap so the car does not crash just because it is
+        // smoothly passing between lane centers.
+        const playerIsSteering = Math.abs(lane - playerLane) > 0.10;
         for (const o of obstacles) {
-            const hit = o.type === 'pedestrian'
-                ? Math.abs(o.x - playerX) < 25
-                : Math.abs((typeof o.lanePos === 'number' ? o.lanePos : o.lane) - playerLane) < 0.42;
-            if (
-                hit &&
-                Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37)
-            ) {
+            const obstacleLane = (typeof o.lanePos === 'number') ? o.lanePos : o.lane;
+            const verticalHit = Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37);
+            let hit = false;
+            if (o.type === 'pedestrian') {
+                hit = Math.abs(o.x - playerX) < 23;
+            } else {
+                const laneDistance = Math.abs(obstacleLane - playerLane);
+                hit = laneDistance < (playerIsSteering ? 0.27 : 0.36);
+            }
+            if (hit && verticalHit) {
                 finishGame(false);
                 drawScene();
                 return;
