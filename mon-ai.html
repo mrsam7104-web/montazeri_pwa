@@ -41,12 +41,12 @@ header:after{content:"";position:absolute;bottom:-1px;right:0;width:42%;height:1
 .inline-code{font: .92em ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;unicode-bidi:isolate;background:#071114;border:1px solid #1b444a;border-radius:5px;padding:2px 5px;color:#9efff2}
 .msg p{margin:0 0 9px}.msg p:last-child{margin-bottom:0}
 @media(max-width:520px){.msg{padding:12px}.code-card pre{font-size:12px;padding:12px}}
-</style></head><body><main class="app"><header><div class="logo">M</div><div class="brand"><h1>MON AI</h1><p>همراه هوشمند تو · همیشه آماده‌ی شنیدن</p></div><div class="header-actions"><button type="button" class="mini-action" id="historyToggle">◷ تاریخچه</button><button type="button" class="mini-action" id="newChat">＋ گفت‌وگوی جدید</button><a class="back" href="./index.html">صفحه اصلی</a></div></header><section class="hero"><div class="eyebrow">YOUR AI COMPANION</div><h2>اینجا می‌تونی خودت باشی.</h2><p>حرف بزن، خالی شو، فکر کن. بدون قضاوت گوش می‌دم. 💠</p></section><section class="history-panel" id="historyPanel"><div class="history-head"><span>گفت‌وگوهای ذخیره‌شده</span><button type="button" class="mini-action" id="closeHistory">بستن</button></div><div class="history-list" id="historyList"></div></section><section class="chat" id="chat" aria-live="polite"><div class="msg assistant">سلام! من MON AI هستم. 💠<br>دوست داری از چی حرف بزنیم؟</div></section><div class="suggestions" id="suggestions"><button class="chip">امروز حالم خوب نیست</button><button class="chip">فقط بهم گوش بده</button><button class="chip">کمکم کن فکر کنم</button></div><div class="attachment-strip" id="attachmentStrip"></div><form class="composer" id="form"><div class="compose-tools"><button class="attach" type="button" id="attachButton" aria-label="افزودن فایل یا عکس" title="افزودن عکس یا فایل">＋</button><input id="fileInput" type="file" accept="image/*,.txt,.md,.csv,.json,.pdf" multiple hidden></div><textarea id="message" rows="1" placeholder="پیامت رو اینجا بنویس..." aria-label="پیام"></textarea><button class="send" type="submit" aria-label="ارسال">➤</button></form><div class="note" id="status">رابط MON AI آماده است؛ برای پاسخ هوشمند باید سرور و API متصل شوند.</div></main><script>
+</style></head><body><main class="app"><header><div class="logo">M</div><div class="brand"><h1>MON AI</h1><p>همراه هوشمند تو · همیشه آماده‌ی شنیدن</p></div><div class="header-actions"><button type="button" class="mini-action" id="historyToggle">◷ تاریخچه</button><button type="button" class="mini-action" id="newChat">＋ گفت‌وگوی جدید</button><a class="back" href="./index.html">صفحه اصلی</a></div></header><section class="hero"><div class="eyebrow">YOUR AI COMPANION</div><h2>اینجا می‌تونی خودت باشی.</h2><p>حرف بزن، خالی شو، فکر کن. بدون قضاوت گوش می‌دم. 💠</p></section><section class="history-panel" id="historyPanel"><div class="history-head"><span>گفت‌وگوهای ذخیره‌شده</span><button type="button" class="mini-action" id="closeHistory">بستن</button></div><div class="history-list" id="historyList"></div></section><section class="chat" id="chat" aria-live="polite"><div class="msg assistant">سلام! من MON AI هستم. 💠<br>دوست داری از چی حرف بزنیم؟</div></section><div class="suggestions" id="suggestions"><button class="chip">امروز حالم خوب نیست</button><button class="chip">فقط بهم گوش بده</button><button class="chip">کمکم کن فکر کنم</button></div><div class="attachment-strip" id="attachmentStrip"></div><form class="composer" id="form"><div class="compose-tools"><button class="attach" type="button" id="attachButton" aria-label="افزودن فایل یا عکس" title="افزودن عکس یا فایل">＋</button><input id="fileInput" type="file" accept="image/*,.txt,.md,.csv,.json,.html,.htm,.css,.js,.mjs,.cjs,.ts,.tsx,.jsx,.py,.sql,.xml,.yaml,.yml,.toml,.ini,.env,.log,.sh,.bat,.java,.c,.h,.cpp,.hpp,.php,.rb,.go,.rs,.swift,.kt,.dart,.vue,.svelte,.astro,.svg,.graphql,.gql,.prisma,.ipynb" multiple hidden></div><textarea id="message" rows="1" placeholder="پیامت رو اینجا بنویس..." aria-label="پیام"></textarea><button class="send" type="submit" aria-label="ارسال">➤</button></form><div class="note" id="status">ارسال زندهٔ پاسخ، فایل‌های متنی/کدنویسی و تصاویر پشتیبانی می‌شود؛ نوع مدل و تنظیمات Worker بر سقف پاسخ اثر دارند.</div></main><script>
 const $=s=>document.querySelector(s),chat=$('#chat'),input=$('#message'),form=$('#form'),sendButton=form.querySelector('.send');
 const API_URL='https://mon-ai-api.mrsam7104.workers.dev';
 const SYSTEM={role:'system',content:'تو MON AI، همراه هوشمند فارسی‌زبان و محترمانه‌ای هستی. با همدلی، دقت و پاسخ‌های نسبتاً کوتاه جواب بده. اگر کاربر فقط می‌خواهد درد دل کند، اول با دقت گوش بده و قضاوت نکن.'};
 const STORE='mon_ai_conversations_v2';
-let conversations=loadConversations(),currentId=null,history=[SYSTEM],attachments=[],busy=false;
+let conversations=loadConversations(),currentId=null,history=[],attachments=[],busy=false;
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function loadConversations(){try{const x=JSON.parse(localStorage.getItem(STORE)||'[]');return Array.isArray(x)?x:[]}catch{return []}}
 function persist(){try{localStorage.setItem(STORE,JSON.stringify(conversations.slice(0,40)))}catch{$('#status').textContent='فضای ذخیره‌سازی مرورگر پر است؛ فایل‌های پیوست در تاریخچه ذخیره نمی‌شوند.'}}
@@ -98,45 +98,121 @@ function add(text,role,files=[]){
  chat.appendChild(el);el.scrollIntoView({behavior:'smooth',block:'end'});return el
 }
 function renderHistory(){const list=$('#historyList');list.replaceChildren();if(!conversations.length){const e=document.createElement('div');e.className='empty-history';e.textContent='هنوز گفت‌وگویی ذخیره نشده.';list.appendChild(e);return}conversations.forEach(c=>{const row=document.createElement('div');row.className='history-row';const b=document.createElement('button');b.className='history-open';b.textContent=(c.title||'گفت‌وگو')+' · '+new Date(c.updated).toLocaleDateString('fa-IR');b.onclick=()=>openConversation(c.id);const d=document.createElement('button');d.className='history-delete';d.textContent='×';d.title='حذف گفت‌وگو';d.onclick=()=>{if(!confirm('این گفت‌وگو حذف شود؟'))return;conversations=conversations.filter(x=>x.id!==c.id);if(currentId===c.id)newConversation();persist();renderHistory()};row.append(b,d);list.appendChild(row)})}
-function openConversation(id){const c=conversations.find(x=>x.id===id);if(!c)return;currentId=id;history=[SYSTEM];chat.replaceChildren();c.messages.forEach(m=>{add(m.text,m.role,m.files||[]);if(m.apiContent)history.push({role:m.role,content:m.apiContent});else if(m.role==='user'||m.role==='assistant')history.push({role:m.role,content:m.text})});$('#historyPanel').classList.remove('open');$('#status').textContent='تاریخچه بارگذاری شد؛ پیام‌های جدید به همین گفت‌وگو اضافه می‌شوند.'}
-function newConversation(){currentId=uid();history=[SYSTEM];attachments=[];renderAttachments();chat.replaceChildren();add('سلام! من MON AI هستم. 💠\nدوست داری از چی حرف بزنیم؟','assistant');$('#suggestions').style.display='flex';$('#historyPanel').classList.remove('open');saveMessage('assistant','سلام! من MON AI هستم. 💠\nدوست داری از چی حرف بزنیم؟')}
+function openConversation(id){const c=conversations.find(x=>x.id===id);if(!c)return;currentId=id;history=[];chat.replaceChildren();c.messages.forEach(m=>{add(m.text,m.role,m.files||[]);if(m.apiContent)history.push({role:m.role,content:m.apiContent});else if(m.role==='user'||m.role==='assistant')history.push({role:m.role,content:m.text})});$('#historyPanel').classList.remove('open');$('#status').textContent='تاریخچه بارگذاری شد؛ پیام‌های جدید به همین گفت‌وگو اضافه می‌شوند.'}
+function newConversation(){currentId=uid();history=[];attachments=[];renderAttachments();chat.replaceChildren();add('سلام! من MON AI هستم. 💠\nدوست داری از چی حرف بزنیم؟','assistant');$('#suggestions').style.display='flex';$('#historyPanel').classList.remove('open');saveMessage('assistant','سلام! من MON AI هستم. 💠\nدوست داری از چی حرف بزنیم؟')}
 function renderAttachments(){const strip=$('#attachmentStrip');strip.replaceChildren();strip.classList.toggle('active',attachments.length>0);attachments.forEach((a,i)=>{const item=document.createElement('div');item.className='attachment-item';const label=document.createElement('span');label.textContent=(a.kind==='image'?'🖼️ ':'📎 ')+a.file.name;const rm=document.createElement('button');rm.type='button';rm.textContent='×';rm.setAttribute('aria-label','حذف پیوست');rm.onclick=()=>{attachments.splice(i,1);renderAttachments()};item.append(label,rm);strip.append(item)})}
-function readFile(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('خواندن فایل ناموفق بود: '+file.name));if(file.type.startsWith('image/'))r.readAsDataURL(file);else if(/\.(txt|md|csv|json)$/i.test(file.name))r.readAsText(file);else r.readAsDataURL(file)})}
+const TEXT_EXTENSIONS=/\.(txt|md|markdown|csv|tsv|json|html?|css|js|mjs|cjs|ts|tsx|jsx|py|sql|xml|ya?ml|toml|ini|env|log|sh|bash|bat|cmd|java|c|h|cc|cpp|hpp|cs|php|rb|go|rs|swift|kt|dart|vue|svelte|astro|svg|graphql|gql|prisma|ipynb|properties|conf|config|r|R|lua|pl|ex|exs|erl|hrl|hs|lhs|scala|sc|clj|cljs|cljc|edn|ps1|psm1|dockerfile|makefile)$/i;
+const IMAGE_TYPES=/^image\/(png|jpeg|webp|gif)$/i;
+function readFile(file){
+ return new Promise((resolve,reject)=>{
+  const r=new FileReader();
+  r.onerror=()=>reject(new Error('خواندن فایل ناموفق بود: '+file.name));
+  r.onload=()=>resolve(r.result);
+  if(IMAGE_TYPES.test(file.type))r.readAsDataURL(file);
+  else if(TEXT_EXTENSIONS.test(file.name)||/^(text\/|application\/(json|xml|javascript|x-javascript))/.test(file.type))r.readAsText(file,'UTF-8');
+  else reject(new Error('فرمت «'+file.name+'» قابل خواندن مستقیم نیست. عکس‌های PNG/JPG/WEBP/GIF و فایل‌های متنی/کدنویسی پشتیبانی می‌شوند؛ PDF و فایل‌های باینری باید ابتدا به متن تبدیل شوند.'));
+ });
+}
 $('#attachButton').onclick=()=>$('#fileInput').click();
 $('#fileInput').addEventListener('change',e=>{for(const file of Array.from(e.target.files||[])){if(file.size>8*1024*1024){add('حجم فایل «'+file.name+'» بیشتر از ۸ مگابایت است.','assistant error');continue}attachments.push({file,kind:file.type.startsWith('image/')?'image':'file'});}renderAttachments();e.target.value=''});
 $('#historyToggle').onclick=()=>{$('#historyPanel').classList.toggle('open');renderHistory()};
 $('#closeHistory').onclick=()=>$('#historyPanel').classList.remove('open');
 $('#newChat').onclick=()=>newConversation();
-async function callMonAI(messages){
- const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages})});
- let data;try{data=await response.json()}catch{throw new Error('پاسخ سرور قابل خواندن نیست.')}
- if(!response.ok)throw new Error(data?.error?.message||data?.error||('خطای سرور: '+response.status));
+async function callMonAI(messages,onChunk){
+ const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json','Accept':'text/event-stream, application/json'},body:JSON.stringify({messages,stream:true,max_tokens:12000})});
+ if(!response.ok){
+  let detail='';try{const e=await response.clone().json();detail=e?.error?.message||e?.error||''}catch{}
+  throw new Error(detail||('خطای سرور: '+response.status));
+ }
+ const contentType=(response.headers.get('content-type')||'').toLowerCase();
+ if(contentType.includes('text/event-stream')){
+  if(!response.body)throw new Error('جریان پاسخ سرور در دسترس نیست.');
+  const reader=response.body.getReader(),decoder=new TextDecoder();
+  let buffer='',answer='',finishReason=null;
+  while(true){
+   const {value,done}=await reader.read();if(done)break;
+   buffer+=decoder.decode(value,{stream:true});
+   const events=buffer.split(/\r?\n\r?\n/);buffer=events.pop()||'';
+   for(const event of events){
+    for(const line of event.split(/\r?\n/)){
+     if(!line.startsWith('data:'))continue;
+     const raw=line.slice(5).trim();if(!raw||raw==='[DONE]')continue;
+     let data;try{data=JSON.parse(raw)}catch{continue}
+     const choice=data?.choices?.[0];const delta=choice?.delta?.content;
+     if(typeof delta==='string'&&delta){answer+=delta;if(onChunk)onChunk(answer)}
+     else if(Array.isArray(delta)){for(const part of delta){if(part?.text){answer+=part.text;if(onChunk)onChunk(answer)}}}
+     if(choice?.finish_reason)finishReason=choice.finish_reason;
+     if(data?.error)throw new Error(data.error.message||'خطای مدل');
+    }
+   }
+  }
+  if(buffer.trim()){
+   for(const line of buffer.split(/\r?\n/)){
+    if(!line.startsWith('data:'))continue;
+    const raw=line.slice(5).trim();if(!raw||raw==='[DONE]')continue;
+    let data;try{data=JSON.parse(raw)}catch{continue}
+    const choice=data?.choices?.[0],delta=choice?.delta?.content;
+    if(typeof delta==='string'&&delta){answer+=delta;if(onChunk)onChunk(answer)}
+    if(choice?.finish_reason)finishReason=choice.finish_reason;
+    if(data?.error)throw new Error(data.error.message||'خطای مدل');
+   }
+  }
+  if(!answer.trim())throw new Error('پاسخ خالی دریافت شد؛ Worker باید پاسخ استریم را عبور دهد یا JSON استاندارد برگرداند.');
+  return {answer,finishReason};
+ }
+ let data;try{data=await response.json()}catch{throw new Error('پاسخ سرور قابل خواندن نیست؛ بررسی کن Worker پاسخ JSON بدهد یا استریم استاندارد داشته باشد.')}
+ if(data?.error)throw new Error(data.error.message||data.error);
  let answer=data?.choices?.[0]?.message?.content;
  if(Array.isArray(answer))answer=answer.map(part=>typeof part==='string'?part:(part.text||'')).filter(Boolean).join('\n');
  if(typeof answer!=='string'||!answer.trim())throw new Error(data?.error?.message||'پاسخ خالی دریافت شد؛ مدل یا تنظیمات Worker را بررسی کن.');
- return {answer:answer.trim(),finishReason:data?.choices?.[0]?.finish_reason,usage:data?.usage};
+ return {answer,finishReason:data?.choices?.[0]?.finish_reason,usage:data?.usage};
 }
-async function send(text){text=(text??input.value).trim();if((!text&&!attachments.length)||busy)return;busy=true;const selected=attachments.slice();attachments=[];renderAttachments();input.value='';input.style.height='auto';$('#suggestions').style.display='none';const names=selected.map(a=>a.file.name);add(text||'فایل(ها) ارسال شد', 'user',names);saveMessage('user',text,names);const pending=document.createElement('div');pending.className='msg assistant thinking';pending.textContent='دارم بهت فکر می‌کنم…';chat.appendChild(pending);pending.scrollIntoView({behavior:'smooth',block:'end'});sendButton.disabled=true;input.disabled=true;$('#attachButton').disabled=true;$('#status').textContent='MON AI در حال فکر کردن است…';
-try{
- let content=[];if(text)content.push({type:'text',text});
- for(const a of selected){const data=await readFile(a.file);if(a.kind==='image'){content.push({type:'image_url',image_url:{url:data}})}else if(/\.(txt|md|csv|json)$/i.test(a.file.name)){content.push({type:'text',text:'محتوای فایل '+a.file.name+':\n'+String(data).slice(0,50000)})}else{throw new Error('این نسخه فقط عکس و فایل‌های متنی TXT، MD، CSV و JSON را برای تحلیل مستقیم پشتیبانی می‌کند: '+a.file.name)}}
- const userContent=content.length===1&&content[0].type==='text'?content[0].text:content;
- const conversation=[...history,{role:'user',content:userContent}];
- let result=await callMonAI([SYSTEM,...conversation.slice(-24)]);
- let answer=result.answer;let continuationCount=0;
- // اگر مدل به سقف توکن برسد، ادامه را خودکار می‌گیریم تا پاسخ ناقص نمایش داده نشود.
- while(result.finishReason==='length'&&continuationCount<3){
-   continuationCount++;
-   pending.textContent='پاسخ طولانی است؛ ادامه‌اش را دریافت می‌کنم…';
-   const continuationMessages=[SYSTEM,...conversation.slice(-22),{role:'assistant',content:answer},{role:'user',content:'ادامه‌ی پاسخ قبلی را دقیقاً از همان‌جا ادامه بده. متن قبلی را تکرار نکن و پاسخ را کامل کن.'}];
-   result=await callMonAI(continuationMessages);
-   if(!result.answer)break;
-   answer+='\n'+result.answer;
- }
- pending.remove();add(answer,'assistant');history.push({role:'user',content:userContent},{role:'assistant',content:answer});saveMessage('assistant',answer);
- const c=current();if(c){const lastUser=[...c.messages].reverse().find(m=>m.role==='user');if(lastUser)lastUser.apiContent=typeof userContent==='string'?userContent:'[پیوست‌ها در تاریخچه ذخیره نشده‌اند] '+text;persist()}
- $('#status').textContent=result.finishReason==='length'?'پاسخ نمایش داده شد؛ برای پاسخ‌های خیلی طولانی از مدل/Worker سقف توکن بالاتری تنظیم کن.':'MON AI متصل است · تاریخچه ذخیره می‌شود';
-}catch(error){pending.remove();const msg='ارسال ناموفق بود: '+(error.message||'اتصال ناموفق بود.')+' لطفاً دوباره تلاش کن.';add(msg,'assistant error');$('#status').textContent='ارسال ناموفق؛ تنظیمات Worker/API یا فرمت فایل را بررسی کن.';}finally{busy=false;sendButton.disabled=false;input.disabled=false;$('#attachButton').disabled=false;input.focus()}}
+async function send(text){
+ text=(text??input.value).trim();
+ if((!text&&!attachments.length)||busy)return;
+ busy=true;
+ const selected=attachments.slice();attachments=[];renderAttachments();
+ input.value='';input.style.height='auto';$('#suggestions').style.display='none';
+ const names=selected.map(a=>a.file.name);
+ add(text||'فایل(ها) ارسال شد','user',names);saveMessage('user',text,names);
+ const pending=document.createElement('div');pending.className='msg assistant thinking';
+ const pendingBody=document.createElement('div');pendingBody.className='message-content';pendingBody.textContent='دارم بهت فکر می‌کنم…';pending.appendChild(pendingBody);chat.appendChild(pending);pending.scrollIntoView({behavior:'smooth',block:'end'});
+ sendButton.disabled=true;input.disabled=true;$('#attachButton').disabled=true;$('#status').textContent='MON AI در حال فکر کردن است…';
+ try{
+  let content=[];if(text)content.push({type:'text',text});
+  let totalTextChars=0;
+  for(const a of selected){
+   const data=await readFile(a.file);
+   if(a.kind==='image'){content.push({type:'image_url',image_url:{url:data}})}
+   else{
+    const fileText=String(data);totalTextChars+=fileText.length;
+    if(totalTextChars>250000)throw new Error('مجموع متن فایل‌ها خیلی بزرگ است (بیش از ۲۵۰ هزار نویسه). فایل‌ها را جداگانه ارسال کن.');
+    content.push({type:'text',text:'\n\n--- شروع فایل: '+a.file.name+' ---\n'+fileText+'\n--- پایان فایل: '+a.file.name+' ---'});
+   }
+  }
+  const userContent=content.length===1&&content[0].type==='text'?content[0].text:content;
+  const conversation=[...history,{role:'user',content:userContent}];
+  let answer='',result=null,continuationCount=0;
+  // Ask for streaming first; if the Worker only returns JSON, callMonAI transparently handles that too.
+  result=await callMonAI([SYSTEM,...conversation.slice(-24)],chunk=>{
+   answer=chunk;pending.classList.remove('thinking');pendingBody.textContent=answer;pending.scrollIntoView({behavior:'smooth',block:'end'});
+  });
+  answer=result.answer;
+  // Continue repeatedly on token-limit stops; the limit is intentionally high for long code answers.
+  while(result.finishReason==='length'&&continuationCount<16){
+   continuationCount++;pending.classList.add('thinking');pendingBody.textContent=answer+'\n\nدر حال دریافت ادامهٔ پاسخ…';
+   const continuationMessages=[SYSTEM,...conversation.slice(-22),{role:'assistant',content:answer},{role:'user',content:'ادامهٔ پاسخ قبلی را دقیقاً از آخرین نویسه ادامه بده. هیچ بخشی از متن قبلی را تکرار نکن. اگر هنوز کامل نشده، ادامه بده و کدها را در بلوک‌های ```language قرار بده.'}];
+   const prior=answer;
+   result=await callMonAI(continuationMessages,chunk=>{pending.classList.remove('thinking');pendingBody.textContent=prior+'\n'+chunk;pending.scrollIntoView({behavior:'smooth',block:'end'});});
+   answer=prior+'\n'+result.answer;
+  }
+  pending.remove();add(answer,'assistant');history.push({role:'user',content:userContent},{role:'assistant',content:answer});saveMessage('assistant',answer);
+  $('#status').textContent=result.finishReason==='length'?'پاسخ هنوز به سقف خروجی مدل رسیده؛ برای پاسخ‌های بسیار طولانی باید سقف توکن خروجی در Worker/API افزایش یابد.':'MON AI متصل است · پاسخ دریافت و ذخیره شد';
+ }catch(error){
+  pending.remove();const msg='ارسال ناموفق بود: '+(error.message||'اتصال ناموفق بود.')+' لطفاً فرمت فایل و اتصال Worker/API را بررسی کن.';
+  add(msg,'assistant error');$('#status').textContent='ارسال ناموفق؛ جزئیات خطا در پیام نمایش داده شد.';
+ }finally{busy=false;sendButton.disabled=false;input.disabled=false;$('#attachButton').disabled=false;input.focus()}
+}
 form.addEventListener('submit',e=>{e.preventDefault();send()});input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px'});input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});$('#suggestions').addEventListener('click',e=>{if(e.target.classList.contains('chip'))send(e.target.textContent)});
 renderHistory();
 </script></body></html>
