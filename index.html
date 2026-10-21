@@ -736,7 +736,7 @@ async function askMONAI(message) {
     let roadOffset = 0;
     let animationId = 0;
     let lastSound = 0;
-    let nextBumpScore = 100;
+    let nextBumpScore = 400;
     let bumpSlowTimer = 0;
     let bumpJumpTimer = 0;
     let crashAnimation = null;
@@ -1111,15 +1111,25 @@ async function askMONAI(message) {
         }
 
         // Slightly gentler speed curve; the game remains challenging at higher scores.
-        const speed = 280 + Math.min(score * 0.30, 350);
+        const baseSpeed = 280 + Math.min(score * 0.30, 350);
+        // The car briefly slows on a speed bump, then returns to the exact current speed.
+        if (bumpSlowTimer > 0) bumpSlowTimer = Math.max(0, bumpSlowTimer - dt);
+        if (bumpJumpTimer > 0) bumpJumpTimer = Math.max(0, bumpJumpTimer - dt);
+        const speed = baseSpeed * (bumpSlowTimer > 0 ? 0.48 : 1);
         roadOffset = (roadOffset + speed * dt) % 50;
+
+        // Spawn exactly one speed bump at 400, 800, 1200 points, and every 400 thereafter.
+        if (score >= nextBumpScore) {
+            obstacles.push({type:'bump', lane:1, visualLane:1, y:-18, triggered:false});
+            nextBumpScore += 400;
+        }
         spawnTimer += dt;
         // Smoothly interpolate the car toward the selected lane instead of snapping.
-        playerLane += (lane - playerLane) * Math.min(1, dt * 8.5);
+        playerLane += (lane - playerLane) * Math.min(1, dt * 6.5);
         if (Math.abs(lane - playerLane) < 0.006) playerLane = lane;
         // Body leans into the turn, then settles naturally as the car reaches its lane.
-        const desiredLean = Math.max(-0.34, Math.min(0.34, (lane - playerLane) * 0.95));
-        steeringLean += (desiredLean - steeringLean) * Math.min(1, dt * 7);
+        const desiredLean = Math.max(-0.62, Math.min(0.62, (lane - playerLane) * 1.75));
+        steeringLean += (desiredLean - steeringLean) * Math.min(1, dt * 5.5);
 
         const spawnInterval = Math.max(0.40, 0.91 - score / 5000);
         const enoughSpacing = obstacles.length === 0 || obstacles[obstacles.length - 1].y > 145;
@@ -1307,7 +1317,7 @@ async function askMONAI(message) {
         claimInProgress = false;
         spawnTimer = 0;
         roadOffset = 0;
-        nextBumpScore = 100;
+        nextBumpScore = 400;
         bumpSlowTimer = 0;
         bumpJumpTimer = 0;
         crashAnimation = null;
