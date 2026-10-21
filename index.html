@@ -736,6 +736,10 @@ async function askMONAI(message) {
     let roadOffset = 0;
     let animationId = 0;
     let lastSound = 0;
+    let nextBumpScore = 100;
+    let bumpSlowTimer = 0;
+    let bumpJumpTimer = 0;
+    let crashAnimation = null;
 
     try {
         best = Number(localStorage.getItem("montazeriRaceBest")) || 0;
@@ -773,6 +777,21 @@ async function askMONAI(message) {
         ctx.translate(x, y);
         ctx.rotate(tilt);
 
+        // Animated exhaust smoke: player exhaust trails behind the car, traffic exhaust
+        // trails toward the top of the screen.
+        const exhaustY = player ? 31 : -31;
+        for (let i = 0; i < 4; i++) {
+            const phase = (animationClock * 1.7 + i * 0.31) % 1;
+            const puffX = (i % 2 ? 1 : -1) * (3 + phase * 5);
+            const puffY = exhaustY + (player ? 1 : -1) * (phase * 19);
+            ctx.globalAlpha = (1 - phase) * 0.25;
+            ctx.fillStyle = '#b9c7c9';
+            ctx.beginPath();
+            ctx.arc(puffX, puffY, 2 + phase * 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
         // Tires
         ctx.fillStyle = "#101516";
         ctx.fillRect(-17, 8, 6, 19);
@@ -805,33 +824,54 @@ async function askMONAI(message) {
     }
 
     function drawRoad() {
-        ctx.fillStyle = "#252e30";
+        // Natural asphalt with subtle texture and darker shoulders.
+        ctx.fillStyle = '#182522';
         ctx.fillRect(0, 0, W, H);
+        const roadGradient = ctx.createLinearGradient(15, 0, W - 15, 0);
+        roadGradient.addColorStop(0, '#303638');
+        roadGradient.addColorStop(0.5, '#3b4041');
+        roadGradient.addColorStop(1, '#2b3234');
+        ctx.fillStyle = roadGradient;
+        ctx.fillRect(12, 0, W - 24, H);
 
-        // Raised curb edges with alternating black/yellow hazard blocks
-        ctx.fillStyle = "#173d32";
-        ctx.fillRect(0, 0, 15, H);
-        ctx.fillRect(W - 15, 0, 15, H);
-        const curbH = 28, curbOffset = roadOffset % curbH;
-        for (let y = -curbH + curbOffset; y < H; y += curbH) {
-            ctx.fillStyle = (Math.floor((y - curbOffset + curbH) / curbH) % 2 === 0) ? "#f5f0d8" : "#e4a63b";
-            ctx.fillRect(0, y, 8, curbH * 0.55);
-            ctx.fillRect(W - 8, y, 8, curbH * 0.55);
+        // Asphalt texture specks, subtly scrolling with the road.
+        for (let i = 0; i < 42; i++) {
+            const x = 19 + ((i * 47) % (W - 38));
+            const y = ((i * 83 + roadOffset * (i % 2 ? 1 : -0.65)) % H + H) % H;
+            ctx.fillStyle = i % 3 ? '#ffffff09' : '#00000012';
+            ctx.fillRect(x, y, i % 4 === 0 ? 3 : 1, i % 4 === 0 ? 2 : 4);
         }
 
-        ctx.strokeStyle = "#d5e5df";
-        ctx.lineWidth = 3;
-        ctx.setLineDash([26, 24]);
-        ctx.lineDashOffset = -roadOffset;
+        // Shoulders and worn edge lines.
+        ctx.fillStyle = '#172b25';
+        ctx.fillRect(0, 0, 12, H);
+        ctx.fillRect(W - 12, 0, 12, H);
+        ctx.strokeStyle = '#d2d0b7';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(13, H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(W - 13, 0); ctx.lineTo(W - 13, H); ctx.stroke();
 
+        // Dashed lane dividers with worn, slightly muted paint.
+        ctx.strokeStyle = '#d7d9ce';
+        ctx.lineWidth = 2.4;
+        ctx.setLineDash([25, 25]);
+        ctx.lineDashOffset = -roadOffset;
         for (let i = 1; i <= 2; i++) {
             ctx.beginPath();
             ctx.moveTo(i * laneW, 0);
             ctx.lineTo(i * laneW, H);
             ctx.stroke();
         }
-
         ctx.setLineDash([]);
+
+        // A faint road sheen keeps the asphalt from looking completely flat.
+        const sheen = ctx.createLinearGradient(0, 0, W, 0);
+        sheen.addColorStop(0, '#ffffff00');
+        sheen.addColorStop(0.48, '#ffffff08');
+        sheen.addColorStop(0.55, '#ffffff02');
+        sheen.addColorStop(1, '#ffffff00');
+        ctx.fillStyle = sheen;
+        ctx.fillRect(14, 0, W - 28, H);
     }
 
     function drawObstacle(o) {
@@ -845,7 +885,24 @@ async function askMONAI(message) {
         }
         ctx.save();
         ctx.translate(x, y);
-        if (o.type === 'truck') {
+        if (o.type === 'bump') {
+            // Raised rubber/asphalt speed bump spanning the road.
+            ctx.save();
+            ctx.translate(-x, 0);
+            ctx.shadowColor = '#00000080'; ctx.shadowBlur = 7;
+            ctx.fillStyle = '#171c1d';
+            ctx.beginPath(); ctx.roundRect(14, -8, W - 28, 17, 5); ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#e6d7a6';
+            for (let bx = 22; bx < W - 24; bx += 28) {
+                ctx.beginPath();
+                ctx.moveTo(bx, 6); ctx.lineTo(bx + 11, -6); ctx.lineTo(bx + 19, -6); ctx.lineTo(bx + 8, 6);
+                ctx.closePath(); ctx.fill();
+            }
+            ctx.strokeStyle = '#ffffff35'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(18, -7); ctx.lineTo(W - 18, -7); ctx.stroke();
+            ctx.restore();
+        } else if (o.type === 'truck') {
             ctx.shadowColor=o.color;ctx.shadowBlur=10;ctx.fillStyle='#111a1d';
             ctx.fillRect(-19,-29,7,16);ctx.fillRect(12,-29,7,16);ctx.fillRect(-19,13,7,16);ctx.fillRect(12,13,7,16);
             ctx.fillStyle=o.color;ctx.beginPath();ctx.roundRect(-15,-31,30,62,5);ctx.fill();
@@ -897,7 +954,31 @@ async function askMONAI(message) {
         obstacles.forEach(drawObstacle);
         // subtle headlight glow around player
         const px=laneW*playerLane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
-        drawCar(px,H-75,'#20d6c5',true,steeringLean);
+        const jumpProgress = bumpJumpTimer > 0 ? 1 - bumpJumpTimer / 0.62 : 1;
+        const jumpHeight = bumpJumpTimer > 0 ? Math.sin(Math.max(0, jumpProgress) * Math.PI) * 17 : 0;
+        drawCar(px,H-75-jumpHeight,'#20d6c5',true,steeringLean);
+        if (crashAnimation) drawCrashEffect(crashAnimation);
+    }
+
+    function drawCrashEffect(crash) {
+        const age = Math.max(0, (performance.now() - crash.start) / 850);
+        const x = crash.x, y = crash.y;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - age);
+        ctx.strokeStyle = '#ffe08a'; ctx.lineWidth = 4;
+        ctx.beginPath();
+        for (let i = 0; i < 12; i++) {
+            const a = i * Math.PI / 6 + age * 2;
+            const inner = 8 + age * 8, outer = 19 + age * 40;
+            ctx.moveTo(x + Math.cos(a) * inner, y + Math.sin(a) * inner);
+            ctx.lineTo(x + Math.cos(a) * outer, y + Math.sin(a) * outer);
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#ff714d';
+        ctx.beginPath(); ctx.arc(x, y, 8 + age * 19, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff3c4';
+        ctx.beginPath(); ctx.arc(x - 3, y - 4, 4 + age * 4, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
     }
 
     function move(direction) {
@@ -962,23 +1043,39 @@ async function askMONAI(message) {
         running = false;
         cancelAnimationFrame(animationId);
 
-        titleEl.textContent = won ? "🏆 قهرمان شدی!" : "💥 تصادف کردی!";
-        messageEl.textContent = won
-            ? "به ۳۰۰۰ امتیاز رسیدی! در حال ثبت جایزه ۵٪…"
-            : "امتیازت: " + Math.floor(score) +
-              " — دوباره تلاش کن و رکوردت رو بشکن!";
-
-        startBtn.textContent = won ? "بازی دوباره" : "تلاش دوباره";
-        overlay.classList.remove("hidden");
-
-        if (won) {
-            prizeEl.textContent = "🎉 ۳۰۰۰ امتیاز! جایزه ۵٪ در حال ثبت است.";
-            playTone(880, 0.18); setTimeout(() => playTone(1100, 0.22), 180);
-            if (registrationDetails) submitRaceClaim(registrationDetails.name, registrationDetails.plate, true);
-            else { setClaimMode('final'); openClaimForm(); }
-        } else {
-            playTone(130, 0.35, "sawtooth", 0.06);
+        if (!won) {
+            // Show the impact animation first; reveal the retry overlay only afterwards.
+            const px = laneW * playerLane + laneW / 2;
+            crashAnimation = { start: performance.now(), x: px, y: H - 75 };
+            playTone(95, 0.22, "sawtooth", 0.07);
+            playTone(180, 0.16, "triangle", 0.045);
+            const crashFrame = () => {
+                drawScene();
+                if (performance.now() - crashAnimation.start < 850) {
+                    animationId = requestAnimationFrame(crashFrame);
+                } else {
+                    crashAnimation = null;
+                    titleEl.textContent = "💥 تصادف کردی!";
+                    messageEl.textContent = "امتیازت: " + Math.floor(score) +
+                        " — دوباره تلاش کن و رکوردت رو بشکن!";
+                    startBtn.textContent = "تلاش دوباره";
+                    overlay.classList.remove("hidden");
+                    drawScene();
+                }
+            };
+            overlay.classList.add("hidden");
+            animationId = requestAnimationFrame(crashFrame);
+            return;
         }
+
+        titleEl.textContent = "🏆 قهرمان شدی!";
+        messageEl.textContent = "به ۳۰۰۰ امتیاز رسیدی! در حال ثبت جایزه ۵٪…";
+        startBtn.textContent = "بازی دوباره";
+        overlay.classList.remove("hidden");
+        prizeEl.textContent = "🎉 ۳۰۰۰ امتیاز! جایزه ۵٪ در حال ثبت است.";
+        playTone(880, 0.18); setTimeout(() => playTone(1100, 0.22), 180);
+        if (registrationDetails) submitRaceClaim(registrationDetails.name, registrationDetails.phone, true);
+        else { setClaimMode('final'); openClaimForm(); }
     }
 
     function update(time) {
@@ -1024,7 +1121,7 @@ async function askMONAI(message) {
         const desiredLean = Math.max(-0.34, Math.min(0.34, (lane - playerLane) * 0.95));
         steeringLean += (desiredLean - steeringLean) * Math.min(1, dt * 7);
 
-        const spawnInterval = Math.max(0.43, 0.94 - score / 5200);
+        const spawnInterval = Math.max(0.40, 0.91 - score / 5000);
         const enoughSpacing = obstacles.length === 0 || obstacles[obstacles.length - 1].y > 145;
 
         if (spawnTimer >= spawnInterval && enoughSpacing) {
@@ -1062,6 +1159,13 @@ async function askMONAI(message) {
 
         obstacles.forEach(o => {
             o.y += speed * dt;
+            if (o.turnSignal) {
+                o.indicatorSoundTimer = (o.indicatorSoundTimer || 0) + dt;
+                if (o.indicatorSoundTimer >= 0.48) {
+                    o.indicatorSoundTimer = 0;
+                    playTone(920, 0.045, "square", 0.014);
+                }
+            }
             if (o.targetLane !== undefined) {
                 if (o.changeDelay > 0) o.changeDelay -= dt;
                 else if (o.changeProgress < 1) {
@@ -1083,6 +1187,15 @@ async function askMONAI(message) {
         const playerX = laneW * playerLane + laneW / 2;
 
         for (const o of obstacles) {
+            if (o.type === 'bump') {
+                if (!o.triggered && Math.abs(o.y - playerY) < 15) {
+                    o.triggered = true;
+                    bumpSlowTimer = 0.42;
+                    bumpJumpTimer = 0.62;
+                    playTone(230, 0.09, 'triangle', 0.04);
+                }
+                continue;
+            }
             const obstacleX = o.type === 'pedestrian' ? o.x : laneW * (o.visualLane ?? o.lane) + laneW / 2;
             const hit = Math.abs(obstacleX - playerX) < (o.type === 'pedestrian' ? 25 : 22);
             if (
@@ -1090,7 +1203,6 @@ async function askMONAI(message) {
                 Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37)
             ) {
                 finishGame(false);
-                drawScene();
                 return;
             }
         }
@@ -1195,6 +1307,10 @@ async function askMONAI(message) {
         claimInProgress = false;
         spawnTimer = 0;
         roadOffset = 0;
+        nextBumpScore = 100;
+        bumpSlowTimer = 0;
+        bumpJumpTimer = 0;
+        crashAnimation = null;
         lastTime = performance.now();
         running = true;
 
