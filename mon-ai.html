@@ -27,6 +27,20 @@ header:after{content:"";position:absolute;bottom:-1px;right:0;width:42%;height:1
 .composer{gap:8px;align-items:flex-end;border:1px solid rgba(34,224,208,.2);border-radius:23px;padding:10px;background:rgba(5,19,23,.9);box-shadow:0 12px 36px #0005,0 0 24px #22e0d00a;bottom:8px}.composer:focus-within{border-color:#22e0d077;box-shadow:0 0 0 3px #22e0d012,0 12px 36px #0005}
 .compose-tools{display:flex;gap:6px;align-items:center}.attach{width:44px;height:46px;display:grid;place-items:center;border-radius:14px;border:1px solid #22e0d044;background:linear-gradient(145deg,#102b30,#09171c);color:var(--cyan);font-size:21px;cursor:pointer;transition:transform .2s,box-shadow .2s}.attach:hover{transform:translateY(-3px) rotate(-4deg);box-shadow:0 0 18px #22e0d033}.composer textarea{min-width:0;border:0;background:transparent;box-shadow:none;padding:12px 9px}.composer textarea:focus{box-shadow:none;background:transparent}.send{flex-shrink:0}.attachment-strip{display:none;gap:7px;flex-wrap:wrap;margin:0 0 8px}.attachment-strip.active{display:flex}.attachment-item{display:flex;align-items:center;gap:8px;max-width:100%;border:1px solid #22e0d044;background:#0a2025;border-radius:12px;padding:7px 9px;font-size:11px;color:#c8f8f2;animation:monBubbleIn .25s ease both}.attachment-item span{overflow-wrap:anywhere}.attachment-item button{border:0;background:transparent;color:#ff9d9d;font-size:16px;cursor:pointer}.history-panel{display:none;margin:12px 0;padding:12px;border:1px solid #22e0d033;border-radius:18px;background:rgba(5,20,24,.9);animation:monEnter .25s ease both}.history-panel.open{display:block}.history-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;color:var(--cyan)}.history-list{display:flex;flex-direction:column;gap:6px;max-height:230px;overflow:auto}.history-row{display:flex;gap:7px}.history-open{flex:1;min-width:0;text-align:right;color:var(--text);background:#0b2025;border:1px solid #17444b;border-radius:11px;padding:10px;font:inherit;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}.history-delete{border:1px solid #55353b;background:#24151a;color:#ffb7bd;border-radius:10px;padding:0 10px;cursor:pointer}.empty-history{font-size:11px;color:var(--muted);padding:10px}.msg .file-label{display:block;margin-top:6px;color:#d1fff8;font-size:11px;opacity:.8}.msg.error{border-color:#b45d6a;color:#ffd4d8}
 @media(max-width:520px){.header-actions{gap:5px}.mini-action{padding:8px;font-size:10px}.composer{gap:6px;padding:7px}.attach{width:39px;height:44px}.compose-tools{gap:5px}.history-panel{margin-top:8px}}
+
+/* Wider, readable messages */
+.msg{max-width:100%;width:100%;min-width:0}
+.user{width:fit-content;max-width:100%;align-self:flex-end}
+.assistant{align-self:stretch}
+.msg>div:first-child{min-width:0;overflow-wrap:anywhere}
+.code-card{margin:12px 0;border:1px solid rgba(34,224,208,.28);border-radius:14px;overflow:hidden;background:#03090d;box-shadow:0 8px 24px #0003;direction:ltr;max-width:100%}
+.code-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:linear-gradient(90deg,#10252b,#0a171c);border-bottom:1px solid rgba(34,224,208,.2);color:#9bd5d1;font:12px Tahoma,Arial,sans-serif}
+.code-copy{border:1px solid rgba(34,224,208,.35);border-radius:8px;background:#103238;color:#bffff7;padding:6px 10px;font:12px Tahoma,Arial,sans-serif;cursor:pointer;transition:.2s}
+.code-copy:hover{background:#165057;box-shadow:0 0 14px #22e0d022}
+.code-card pre{margin:0;padding:15px;overflow:auto;max-width:100%;white-space:pre;tab-size:2;color:#e2fffb;font:13px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;text-align:left;direction:ltr}
+.inline-code{font: .92em ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;unicode-bidi:isolate;background:#071114;border:1px solid #1b444a;border-radius:5px;padding:2px 5px;color:#9efff2}
+.msg p{margin:0 0 9px}.msg p:last-child{margin-bottom:0}
+@media(max-width:520px){.msg{padding:12px}.code-card pre{font-size:12px;padding:12px}}
 </style></head><body><main class="app"><header><div class="logo">M</div><div class="brand"><h1>MON AI</h1><p>همراه هوشمند تو · همیشه آماده‌ی شنیدن</p></div><div class="header-actions"><button type="button" class="mini-action" id="historyToggle">◷ تاریخچه</button><button type="button" class="mini-action" id="newChat">＋ گفت‌وگوی جدید</button><a class="back" href="./index.html">صفحه اصلی</a></div></header><section class="hero"><div class="eyebrow">YOUR AI COMPANION</div><h2>اینجا می‌تونی خودت باشی.</h2><p>حرف بزن، خالی شو، فکر کن. بدون قضاوت گوش می‌دم. 💠</p></section><section class="history-panel" id="historyPanel"><div class="history-head"><span>گفت‌وگوهای ذخیره‌شده</span><button type="button" class="mini-action" id="closeHistory">بستن</button></div><div class="history-list" id="historyList"></div></section><section class="chat" id="chat" aria-live="polite"><div class="msg assistant">سلام! من MON AI هستم. 💠<br>دوست داری از چی حرف بزنیم؟</div></section><div class="suggestions" id="suggestions"><button class="chip">امروز حالم خوب نیست</button><button class="chip">فقط بهم گوش بده</button><button class="chip">کمکم کن فکر کنم</button></div><div class="attachment-strip" id="attachmentStrip"></div><form class="composer" id="form"><div class="compose-tools"><button class="attach" type="button" id="attachButton" aria-label="افزودن فایل یا عکس" title="افزودن عکس یا فایل">＋</button><input id="fileInput" type="file" accept="image/*,.txt,.md,.csv,.json,.pdf" multiple hidden></div><textarea id="message" rows="1" placeholder="پیامت رو اینجا بنویس..." aria-label="پیام"></textarea><button class="send" type="submit" aria-label="ارسال">➤</button></form><div class="note" id="status">رابط MON AI آماده است؛ برای پاسخ هوشمند باید سرور و API متصل شوند.</div></main><script>
 const $=s=>document.querySelector(s),chat=$('#chat'),input=$('#message'),form=$('#form'),sendButton=form.querySelector('.send');
 const API_URL='https://mon-ai-api.mrsam7104.workers.dev';
@@ -39,7 +53,50 @@ function persist(){try{localStorage.setItem(STORE,JSON.stringify(conversations.s
 function current(){return conversations.find(c=>c.id===currentId)}
 function ensureConversation(){if(!currentId||!current()){currentId=uid();conversations.unshift({id:currentId,title:'گفت‌وگوی جدید',updated:Date.now(),messages:[]})}}
 function saveMessage(role,text,files=[]){ensureConversation();const c=current();c.messages.push({role,text,files,time:Date.now()});if(c.messages.length===1&&role==='user')c.title=text.slice(0,55)||files.join(', ')||'گفت‌وگوی جدید';c.updated=Date.now();conversations.sort((a,b)=>b.updated-a.updated);persist();renderHistory()}
-function add(text,role,files=[]){const el=document.createElement('div');el.className='msg '+role;const body=document.createElement('div');body.textContent=text;el.appendChild(body);if(files.length){const f=document.createElement('span');f.className='file-label';f.textContent='📎 '+files.join('، ');el.appendChild(f)}const t=document.createElement('span');t.className='time';t.textContent=new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});el.appendChild(t);chat.appendChild(el);el.scrollIntoView({behavior:'smooth',block:'end'});return el}
+function renderMessageContent(container,text){
+ const source=String(text??'');
+ const fence=/```([^\n`]*)\n([\s\S]*?)```/g;
+ let last=0,match;
+ function addText(str){
+   if(!str)return;
+   const parts=str.split(/(`[^`\n]+`)/g);
+   parts.forEach(part=>{
+     if(!part)return;
+     if(part.startsWith('`')&&part.endsWith('`')){
+       const code=document.createElement('code');code.className='inline-code';code.textContent=part.slice(1,-1);container.appendChild(code);
+     }else{
+       const block=document.createElement('span');block.textContent=part;block.style.whiteSpace='pre-wrap';block.style.overflowWrap='anywhere';container.appendChild(block);
+     }
+   });
+ }
+ while((match=fence.exec(source))!==null){
+   addText(source.slice(last,match.index));
+   const lang=(match[1]||'code').trim()||'code';
+   const codeText=match[2].replace(/\n$/,'');
+   const card=document.createElement('section');card.className='code-card';
+   const head=document.createElement('div');head.className='code-head';
+   const label=document.createElement('span');label.textContent=lang;
+   const copy=document.createElement('button');copy.type='button';copy.className='code-copy';copy.textContent='⧉ کپی کد';
+   copy.addEventListener('click',async()=>{
+     try{await navigator.clipboard.writeText(codeText);copy.textContent='✓ کپی شد';}
+     catch(e){const area=document.createElement('textarea');area.value=codeText;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();const ok=document.execCommand('copy');area.remove();copy.textContent=ok?'✓ کپی شد':'کپی نشد';}
+     setTimeout(()=>copy.textContent='⧉ کپی کد',1600);
+   });
+   head.append(label,copy);
+   const pre=document.createElement('pre');const code=document.createElement('code');code.textContent=codeText;pre.appendChild(code);
+   card.append(head,pre);container.appendChild(card);last=fence.lastIndex;
+ }
+ addText(source.slice(last));
+}
+function add(text,role,files=[]){
+ const el=document.createElement('div');el.className='msg '+role;
+ const body=document.createElement('div');body.className='message-content';
+ if(role==='assistant')renderMessageContent(body,text);else body.textContent=String(text??'');
+ el.appendChild(body);
+ if(files.length){const f=document.createElement('span');f.className='file-label';f.textContent='📎 '+files.join('، ');el.appendChild(f)}
+ const t=document.createElement('span');t.className='time';t.textContent=new Date().toLocaleTimeString('fa-IR',{hour:'2-digit',minute:'2-digit'});el.appendChild(t);
+ chat.appendChild(el);el.scrollIntoView({behavior:'smooth',block:'end'});return el
+}
 function renderHistory(){const list=$('#historyList');list.replaceChildren();if(!conversations.length){const e=document.createElement('div');e.className='empty-history';e.textContent='هنوز گفت‌وگویی ذخیره نشده.';list.appendChild(e);return}conversations.forEach(c=>{const row=document.createElement('div');row.className='history-row';const b=document.createElement('button');b.className='history-open';b.textContent=(c.title||'گفت‌وگو')+' · '+new Date(c.updated).toLocaleDateString('fa-IR');b.onclick=()=>openConversation(c.id);const d=document.createElement('button');d.className='history-delete';d.textContent='×';d.title='حذف گفت‌وگو';d.onclick=()=>{if(!confirm('این گفت‌وگو حذف شود؟'))return;conversations=conversations.filter(x=>x.id!==c.id);if(currentId===c.id)newConversation();persist();renderHistory()};row.append(b,d);list.appendChild(row)})}
 function openConversation(id){const c=conversations.find(x=>x.id===id);if(!c)return;currentId=id;history=[SYSTEM];chat.replaceChildren();c.messages.forEach(m=>{add(m.text,m.role,m.files||[]);if(m.apiContent)history.push({role:m.role,content:m.apiContent});else if(m.role==='user'||m.role==='assistant')history.push({role:m.role,content:m.text})});$('#historyPanel').classList.remove('open');$('#status').textContent='تاریخچه بارگذاری شد؛ پیام‌های جدید به همین گفت‌وگو اضافه می‌شوند.'}
 function newConversation(){currentId=uid();history=[SYSTEM];attachments=[];renderAttachments();chat.replaceChildren();add('سلام! من MON AI هستم. 💠\nدوست داری از چی حرف بزنیم؟','assistant');$('#suggestions').style.display='flex';$('#historyPanel').classList.remove('open');saveMessage('assistant','سلام! من MON AI هستم. 💠\nدوست داری از چی حرف بزنیم؟')}
