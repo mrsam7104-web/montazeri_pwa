@@ -835,31 +835,61 @@ async function askMONAI(message) {
     }
 
     function drawObstacle(o) {
-        const x = o.type === 'pedestrian' ? o.x : laneW * o.lane + laneW / 2;
+        const visualLane = o.visualLane ?? o.lane;
+        const x = o.type === 'pedestrian' ? o.x : laneW * visualLane + laneW / 2;
         const y = o.y;
         if (o.type === 'pedestrian') {
-            // Zebra crossing follows the pedestrian while they cross the road.
-            ctx.save();
-            ctx.fillStyle = "#f3f5ef";
+            ctx.save(); ctx.fillStyle = "#f3f5ef";
             for (let i = -3; i <= 3; i++) ctx.fillRect(18, y + i * 7 - 2, W - 36, 4);
             ctx.restore();
         }
-        ctx.save();ctx.translate(x,y);
-        if(o.type==='truck'){
-          ctx.shadowColor=o.color;ctx.shadowBlur=10;ctx.fillStyle='#111a1d';ctx.fillRect(-19,-29,7,16);ctx.fillRect(12,-29,7,16);ctx.fillRect(-19,13,7,16);ctx.fillRect(12,13,7,16);
-          ctx.fillStyle=o.color;ctx.beginPath();ctx.roundRect(-15,-31,30,62,5);ctx.fill();ctx.fillStyle='#263c43';ctx.fillRect(-11,-24,22,24);ctx.fillStyle='#d9f7ff';ctx.fillRect(-10,-21,4,5);ctx.fillRect(6,-21,4,5);ctx.fillStyle='#ffefb1';ctx.fillRect(-10,23,5,4);ctx.fillRect(5,23,5,4);ctx.fillStyle='#e9ffff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('TRUCK',0,8);
-        } else if(o.type==='motor'){
-          ctx.shadowColor='#ffcf67';ctx.shadowBlur=8;ctx.fillStyle='#111';ctx.beginPath();ctx.arc(0,-18,7,0,Math.PI*2);ctx.arc(0,19,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle=o.color;ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(0,-18);ctx.lineTo(-8,-2);ctx.lineTo(2,8);ctx.lineTo(0,19);ctx.moveTo(-8,-2);ctx.lineTo(8,-6);ctx.stroke();ctx.fillStyle='#ffd58b';ctx.beginPath();ctx.arc(2,-8,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#17232b';ctx.fillRect(-4,-1,9,13);
-        } else if(o.type==='pedestrian'){
-          // Walking cycle: alternate leg swings smoothly while crossing.
-          const step = Math.sin(animationClock * 11 + (o.walkPhase || 0)) * 8;
-          const arm = Math.sin(animationClock * 11 + (o.walkPhase || 0) + Math.PI) * 5;
-          ctx.shadowColor='#ff6485';ctx.shadowBlur=10;ctx.fillStyle='#f2c9a5';ctx.beginPath();ctx.arc(0,-19,7,0,Math.PI*2);ctx.fill();
-          ctx.strokeStyle=o.color;ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();
-          ctx.moveTo(0,-10);ctx.lineTo(0,8);ctx.moveTo(0,-5);ctx.lineTo(-11,2+arm);ctx.moveTo(0,-5);ctx.lineTo(10,1-arm);
-          ctx.moveTo(0,8);ctx.lineTo(-5-step,22);ctx.moveTo(0,8);ctx.lineTo(5+step,22);ctx.stroke();
-          ctx.fillStyle='#fff';ctx.fillRect(-5,-23,10,2);
-        } else drawCar(0,0,o.color);
+        ctx.save();
+        ctx.translate(x, y);
+        if (o.type === 'truck') {
+            ctx.shadowColor=o.color;ctx.shadowBlur=10;ctx.fillStyle='#111a1d';
+            ctx.fillRect(-19,-29,7,16);ctx.fillRect(12,-29,7,16);ctx.fillRect(-19,13,7,16);ctx.fillRect(12,13,7,16);
+            ctx.fillStyle=o.color;ctx.beginPath();ctx.roundRect(-15,-31,30,62,5);ctx.fill();
+            ctx.fillStyle='#263c43';ctx.fillRect(-11,-24,22,24);
+            // Headlamps face the player: the truck is travelling down the screen.
+            const lampPulse = 0.78 + Math.sin(animationClock * 7 + (o.lampPhase || 0)) * 0.18;
+            ctx.save();ctx.globalAlpha=lampPulse;
+            ctx.shadowColor='#fff4b0';ctx.shadowBlur=13;
+            ctx.fillStyle='#fff4b0';ctx.beginPath();ctx.roundRect(-11,22,7,6,2);ctx.fill();ctx.beginPath();ctx.roundRect(4,22,7,6,2);ctx.fill();
+            ctx.restore();
+            const beam=ctx.createLinearGradient(0,28,0,105);
+            beam.addColorStop(0,'rgba(255,245,180,.25)');beam.addColorStop(1,'rgba(255,245,180,0)');
+            ctx.fillStyle=beam;ctx.beginPath();ctx.moveTo(-10,28);ctx.lineTo(-31,104);ctx.lineTo(31,104);ctx.lineTo(10,28);ctx.closePath();ctx.fill();
+            ctx.fillStyle='#e9ffff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('TRUCK',0,8);
+        } else if (o.type === 'motor') {
+            const wobble=Math.sin(animationClock*13+(o.walkPhase||0))*1.8;
+            ctx.translate(0,wobble);
+            // Spinning wheels, visible fork, frame, handlebars and animated rider.
+            const spin=animationClock*12+(o.walkPhase||0);
+            ctx.shadowColor='#ffcf67';ctx.shadowBlur=8;ctx.fillStyle='#101516';
+            [-19,19].forEach(wy=>{ctx.beginPath();ctx.arc(0,wy,7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#b9d5dc';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(Math.cos(spin)*5,wy-Math.sin(spin)*5);ctx.lineTo(-Math.cos(spin)*5,wy+Math.sin(spin)*5);ctx.stroke()});
+            ctx.shadowBlur=0;ctx.strokeStyle=o.color;ctx.lineWidth=4;ctx.lineCap='round';
+            ctx.beginPath();ctx.moveTo(0,-19);ctx.lineTo(-7,-3);ctx.lineTo(3,9);ctx.lineTo(0,19);ctx.moveTo(-7,-3);ctx.lineTo(8,-8);ctx.lineTo(13,-10);ctx.stroke();
+            ctx.strokeStyle='#dce7e8';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(7,-8);ctx.lineTo(13,-12);ctx.stroke();
+            ctx.fillStyle='#ffd58b';ctx.beginPath();ctx.arc(2,-13,6,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#17232b';ctx.beginPath();ctx.moveTo(-3,-7);ctx.lineTo(7,-5);ctx.lineTo(4,8);ctx.lineTo(-4,4);ctx.closePath();ctx.fill();
+            ctx.strokeStyle='#ffd58b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(1,-4);ctx.lineTo(-7,-1);ctx.moveTo(1,-4);ctx.lineTo(9,-9);ctx.stroke();
+        } else if (o.type === 'pedestrian') {
+            const step=Math.sin(animationClock*11+(o.walkPhase||0))*8;
+            const arm=Math.sin(animationClock*11+(o.walkPhase||0)+Math.PI)*5;
+            ctx.shadowColor='#ff6485';ctx.shadowBlur=10;ctx.fillStyle='#f2c9a5';ctx.beginPath();ctx.arc(0,-19,7,0,Math.PI*2);ctx.fill();
+            ctx.strokeStyle=o.color;ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();
+            ctx.moveTo(0,-10);ctx.lineTo(0,8);ctx.moveTo(0,-5);ctx.lineTo(-11,2+arm);ctx.moveTo(0,-5);ctx.lineTo(10,1-arm);
+            ctx.moveTo(0,8);ctx.lineTo(-5-step,22);ctx.moveTo(0,8);ctx.lineTo(5+step,22);ctx.stroke();
+            ctx.fillStyle='#fff';ctx.fillRect(-5,-23,10,2);
+        } else {
+            const turn=o.turnSignal||0;
+            drawCar(0,0,o.color,false,0);
+            if(turn){
+                const blink=Math.sin(animationClock*12)>0;
+                ctx.fillStyle=blink?'#ffb52e':'#694c24';ctx.shadowColor='#ffb52e';ctx.shadowBlur=blink?10:0;
+                ctx.fillRect(turn<0?-12:7,16,5,4);ctx.fillRect(turn<0?-12:-12,-23,5,4);
+            }
+        }
         ctx.restore();
     }
     function drawScene() {
@@ -991,7 +1021,7 @@ async function askMONAI(message) {
         playerLane += (lane - playerLane) * Math.min(1, dt * 8.5);
         if (Math.abs(lane - playerLane) < 0.006) playerLane = lane;
         // Body leans into the turn, then settles naturally as the car reaches its lane.
-        const desiredLean = Math.max(-0.20, Math.min(0.20, (lane - playerLane) * 0.42));
+        const desiredLean = Math.max(-0.34, Math.min(0.34, (lane - playerLane) * 0.95));
         steeringLean += (desiredLean - steeringLean) * Math.min(1, dt * 7);
 
         const spawnInterval = Math.max(0.43, 0.94 - score / 5200);
@@ -1008,7 +1038,17 @@ async function askMONAI(message) {
             }
             const roll=Math.random();
             const type=roll<0.22?'truck':roll<0.45?'motor':roll<0.65?'pedestrian':'car';
-            const obstacle = {lane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type]};
+            const obstacle = {lane:newLane,visualLane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type],lampPhase:Math.random()*Math.PI*2,walkPhase:Math.random()*Math.PI*2,changeProgress:0};
+            // After 1500 points, some cars signal and glide into an adjacent lane.
+            if (score >= 1500 && type === 'car' && Math.random() < 0.34) {
+                const choices=[0,1,2].filter(n=>n!==newLane);
+                const target=choices[Math.floor(Math.random()*choices.length)];
+                obstacle.fromLane=newLane;obstacle.targetLane=target;obstacle.lane=target;
+                obstacle.visualLane=newLane;obstacle.changeProgress=0;
+                obstacle.changeDuration=0.9+Math.random()*0.35;
+                obstacle.turnSignal=target<newLane?-1:1;
+                obstacle.changeDelay=0.18+Math.random()*0.25;
+            }
             // Pedestrians cross horizontally; initialize x/direction so they are visible
             // and their position stays in sync with the drawing and collision checks.
             if (type === 'pedestrian') {
@@ -1022,6 +1062,15 @@ async function askMONAI(message) {
 
         obstacles.forEach(o => {
             o.y += speed * dt;
+            if (o.targetLane !== undefined) {
+                if (o.changeDelay > 0) o.changeDelay -= dt;
+                else if (o.changeProgress < 1) {
+                    o.changeProgress=Math.min(1,o.changeProgress+dt/o.changeDuration);
+                    const eased=o.changeProgress*o.changeProgress*(3-2*o.changeProgress);
+                    o.visualLane=o.fromLane+(o.targetLane-o.fromLane)*eased;
+                    if(o.changeProgress>=1){o.visualLane=o.targetLane;o.turnSignal=0;delete o.targetLane;}
+                }
+            }
             if (o.type === 'pedestrian') {
                 o.x += o.crossDirection * (105 + Math.min(score * 0.025, 35)) * dt;
                 if (o.x < 22) { o.x = 22; o.crossDirection = 1; }
@@ -1034,9 +1083,8 @@ async function askMONAI(message) {
         const playerX = laneW * playerLane + laneW / 2;
 
         for (const o of obstacles) {
-            const hit = o.type === 'pedestrian'
-                ? Math.abs(o.x - playerX) < 25
-                : o.lane === lane;
+            const obstacleX = o.type === 'pedestrian' ? o.x : laneW * (o.visualLane ?? o.lane) + laneW / 2;
+            const hit = Math.abs(obstacleX - playerX) < (o.type === 'pedestrian' ? 25 : 22);
             if (
                 hit &&
                 Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37)
