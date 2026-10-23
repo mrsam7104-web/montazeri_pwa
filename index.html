@@ -754,7 +754,7 @@ async function askMONAI(message) {
     let bumpSlowTimer = 0;
     let bumpJumpTimer = 0;
     let crashAnimation = null;
-    let nextGasScore = 1000, gasDeadline = null, gasActive = false, refuelUntil = 0, refuelStart = 0;
+    let nextGasScore = 1000, gasDeadline = null, gasActive = false, refuelUntil = 0, refuelStart = 0, resumeSlowTimer = 0;
 
     try {
         best = Number(localStorage.getItem("montazeriRaceBest")) || 0;
@@ -947,17 +947,32 @@ async function askMONAI(message) {
     function drawScene() {
         drawRoad();
         if (gasActive || (score >= nextGasScore-190 && score < nextGasScore+310)) {
-          const gx=W-45,gy=105;ctx.save();
-          ctx.fillStyle='#eee9d4';ctx.fillRect(gx,gy,40,78);ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,40,17);
-          ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+20,gy+12);
-          ctx.fillStyle='#30464a';ctx.fillRect(gx+8,gy+26,24,30);ctx.fillStyle='#202629';ctx.fillRect(gx+15,gy+63,12,15);
+          // The fuel pump is placed inside the left road lane, never on the sidewalk.
+          const gx=47+laneW/2-17, gy=H-176;
+          ctx.save();
+          ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(gx+19,gy+67,24,8,0,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='#e9e5d5';ctx.fillRect(gx,gy,34,66);
+          ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,34,15);
+          ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+17,gy+11);
+          ctx.fillStyle='#243a40';ctx.fillRect(gx+6,gy+23,22,20);
+          ctx.fillStyle='#55e6d2';ctx.fillRect(gx+9,gy+26,16,7);
+          ctx.fillStyle='#202629';ctx.fillRect(gx+12,gy+48,10,18);
+          ctx.strokeStyle='#171d20';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+47,gy+30,gx+42,gy+55,gx+29,gy+52);ctx.stroke();
           if(gasActive){
-            const progress=Math.min(1,(performance.now()-refuelStart)/4000),ax=W-22-progress*83,ay=gy+47;
-            ctx.fillStyle='#efc5a0';ctx.beginPath();ctx.arc(ax,ay-15,5,0,Math.PI*2);ctx.fill();
-            ctx.fillStyle='#087f8c';ctx.fillRect(ax-5,ay-10,10,13);ctx.strokeStyle='#efc5a0';ctx.lineWidth=2;
-            ctx.beginPath();ctx.moveTo(ax-2,ay+3);ctx.lineTo(ax-5,ay+10);ctx.moveTo(ax+2,ay+3);ctx.lineTo(ax+5,ay+10);ctx.stroke();
-            ctx.strokeStyle='#e9e9d5';ctx.beginPath();ctx.moveTo(ax-4,ay-4);ctx.lineTo(ax-17,ay);ctx.lineTo(ax-20,ay-7);ctx.stroke();
-            ctx.fillStyle='#fff';ctx.font='bold 9px Tahoma';ctx.fillText('در حال سوخت‌گیری',W/2,32);
+            const progress=Math.min(1,(performance.now()-refuelStart)/4000);
+            const px=47+laneW*playerLane+laneW/2, py=H-75;
+            // Attendant walks from the pump to the stopped car, then fuels it.
+            const walk=Math.min(1,progress/0.9), ax=(gx+34)+(px-31-(gx+34))*walk, ay=py-6;
+            ctx.fillStyle='#efc5a0';ctx.beginPath();ctx.arc(ax,ay-18,5,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#087f8c';ctx.fillRect(ax-5,ay-13,10,14);
+            ctx.strokeStyle='#efc5a0';ctx.lineWidth=2;ctx.beginPath();
+            ctx.moveTo(ax-2,ay+1);ctx.lineTo(ax-5,ay+8);ctx.moveTo(ax+2,ay+1);ctx.lineTo(ax+5,ay+8);
+            ctx.moveTo(ax+3,ay-8);ctx.lineTo(px-13,py+1);ctx.stroke();
+            if(progress>0.9){
+              ctx.strokeStyle='#e9e9d5';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+54,gy+32,px-23,py-5,px-13,py-2);ctx.stroke();
+            }
+            ctx.fillStyle='#fff';ctx.font='bold 9px Tahoma';ctx.fillText(progress<0.25?'متصدی در حال نزدیک شدن':'در حال سوخت‌گیری',W/2,32);
+            ctx.fillStyle='#ffffffcc';ctx.fillRect(W/2-42,40,84,5);ctx.fillStyle='#20d6c5';ctx.fillRect(W/2-42,40,84*progress,5);
           }
           ctx.restore();
         }
@@ -1097,7 +1112,7 @@ async function askMONAI(message) {
 
         if (gasActive) {
             if (performance.now() >= refuelUntil) {
-                gasActive=false;gasDeadline=null;nextGasScore+=1000;
+                gasActive=false;gasDeadline=null;nextGasScore+=1000;resumeSlowTimer=1.35;
                 prizeEl.textContent='⛽ باک پر شد! تا جایگاه بعدی ادامه بده.';playTone(900,.12,'triangle',.04);
             } else { drawScene(); animationId=requestAnimationFrame(update); return; }
         }
@@ -1144,7 +1159,9 @@ async function askMONAI(message) {
         // The car briefly slows on a speed bump, then returns to the exact current speed.
         if (bumpSlowTimer > 0) bumpSlowTimer = Math.max(0, bumpSlowTimer - dt);
         if (bumpJumpTimer > 0) bumpJumpTimer = Math.max(0, bumpJumpTimer - dt);
-        const speed = baseSpeed * (bumpSlowTimer > 0 ? 0.48 : 1);
+        if (resumeSlowTimer > 0) resumeSlowTimer = Math.max(0, resumeSlowTimer - dt);
+        const resumeFactor = resumeSlowTimer > 0 ? 0.32 + 0.68 * (1 - resumeSlowTimer / 1.35) : 1;
+        const speed = baseSpeed * (bumpSlowTimer > 0 ? 0.48 : resumeFactor);
         roadOffset = (roadOffset + speed * dt) % 50;
 
         // Spawn exactly one speed bump at 400, 800, 1200 points, and every 400 thereafter.
@@ -1350,7 +1367,7 @@ async function askMONAI(message) {
         bumpSlowTimer = 0;
         bumpJumpTimer = 0;
         crashAnimation = null;
-        nextGasScore=1000;gasDeadline=null;gasActive=false;
+        nextGasScore=1000;gasDeadline=null;gasActive=false;resumeSlowTimer=0;
         lastTime = performance.now();
         running = true;
 
