@@ -733,7 +733,7 @@ async function askMONAI(message) {
 
     const W = canvas.width;
     const H = canvas.height;
-    const laneW = W / 3;
+    const laneW = (W - 94) / 3;
 
     let lane = 1;
     let playerLane = 1; // eased visual position for smooth steering
@@ -754,6 +754,7 @@ async function askMONAI(message) {
     let bumpSlowTimer = 0;
     let bumpJumpTimer = 0;
     let crashAnimation = null;
+    let nextGasScore = 2000, gasDeadline = null, gasActive = false, refuelUntil = 0, refuelStart = 0;
 
     try {
         best = Number(localStorage.getItem("montazeriRaceBest")) || 0;
@@ -787,110 +788,90 @@ async function askMONAI(message) {
     }
 
     function drawCar(x, y, color, player = false, tilt = 0) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(tilt);
-
-        // Animated exhaust smoke: player exhaust trails behind the car, traffic exhaust
-        // trails toward the top of the screen.
-        const exhaustY = player ? 31 : -31;
-        for (let i = 0; i < 4; i++) {
-            const phase = (animationClock * 1.7 + i * 0.31) % 1;
-            const puffX = (i % 2 ? 1 : -1) * (3 + phase * 5);
-            const puffY = exhaustY + (player ? 1 : -1) * (phase * 19);
-            ctx.globalAlpha = (1 - phase) * 0.25;
-            ctx.fillStyle = '#b9c7c9';
-            ctx.beginPath();
-            ctx.arc(puffX, puffY, 2 + phase * 4, 0, Math.PI * 2);
-            ctx.fill();
+        ctx.save(); ctx.translate(x,y); ctx.rotate(tilt);
+        // Soft ground shadow
+        ctx.fillStyle='#0008';ctx.beginPath();ctx.ellipse(1,3,19,32,0,0,Math.PI*2);ctx.fill();
+        // Wheels with animated rotating spokes (front of every car points upward)
+        const spin=animationClock*13;
+        [-1,1].forEach(side=>[-19,18].forEach((wy,idx)=>{
+          const wx=side*15;
+          ctx.fillStyle='#090d10';ctx.beginPath();ctx.roundRect(wx-4,wy-7,8,14,2);ctx.fill();
+          ctx.fillStyle='#59666b';ctx.fillRect(wx-2.5,wy-5,5,10);
+          ctx.strokeStyle='#c5d2d5';ctx.lineWidth=1;
+          for(let k=0;k<3;k++){const a=spin+k*Math.PI*2/3;ctx.beginPath();ctx.moveTo(wx,wy);ctx.lineTo(wx+Math.cos(a)*2.4,wy+Math.sin(a)*4.5);ctx.stroke()}
+        }));
+        // Body, metallic highlights and bumpers
+        const grad=ctx.createLinearGradient(-15,0,15,0);grad.addColorStop(0,'#0007');grad.addColorStop(.22,color);grad.addColorStop(.55,color);grad.addColorStop(1,'#ffffff35');
+        ctx.fillStyle=grad;ctx.beginPath();ctx.roundRect(-13,-29,26,58,7);ctx.fill();
+        ctx.strokeStyle='#ffffff55';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(-11,-27,22,53,5);ctx.stroke();
+        ctx.fillStyle='#172b35';ctx.beginPath();ctx.roundRect(-9,-17,18,14,3);ctx.fill();
+        ctx.fillStyle='#6d9da8';ctx.fillRect(-7,-15,6,9);ctx.fillRect(2,-15,5,9);
+        ctx.fillStyle='#17262c';ctx.beginPath();ctx.roundRect(-9,2,18,10,2);ctx.fill();
+        ctx.fillStyle='#9fb9be';ctx.fillRect(-7,4,14,1);
+        // hood lines and grille
+        ctx.strokeStyle='#ffffff42';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-7,-23);ctx.lineTo(-5,-7);ctx.moveTo(7,-23);ctx.lineTo(5,-7);ctx.stroke();
+        ctx.fillStyle='#171d20';ctx.fillRect(-7,-29,14,3);ctx.fillRect(-7,26,14,3);
+        // Front lamps ALWAYS at negative Y (up-screen), including player car
+        const lamp=player?1:(.82+Math.sin(animationClock*5)*.12);
+        ctx.save();ctx.globalAlpha=lamp;ctx.shadowColor='#fff1b2';ctx.shadowBlur=player?14:8;ctx.fillStyle='#fff6cc';
+        ctx.beginPath();ctx.roundRect(-10,-27,7,4,1.5);ctx.fill();ctx.beginPath();ctx.roundRect(3,-27,7,4,1.5);ctx.fill();ctx.restore();
+        ctx.fillStyle='#ff4856';ctx.shadowColor='#ff2638';ctx.shadowBlur=5;ctx.fillRect(-10,23,6,3);ctx.fillRect(4,23,6,3);ctx.shadowBlur=0;
+        if(player){
+          const beam=ctx.createLinearGradient(0,-30,0,-115);beam.addColorStop(0,'#fff2b22b');beam.addColorStop(1,'#fff2b200');
+          ctx.fillStyle=beam;ctx.beginPath();ctx.moveTo(-9,-28);ctx.lineTo(-34,-112);ctx.lineTo(34,-112);ctx.lineTo(9,-28);ctx.closePath();ctx.fill();
+          ctx.fillStyle='#d9ffff';ctx.fillRect(-2,-25,4,2);
         }
-        ctx.globalAlpha = 1;
-
-        // Tires
-        ctx.fillStyle = "#101516";
-        ctx.fillRect(-17, 8, 6, 19);
-        ctx.fillRect(11, 8, 6, 19);
-        ctx.fillRect(-17, -22, 6, 19);
-        ctx.fillRect(11, -22, 6, 19);
-
-        // Body
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.roundRect(-14, -27, 28, 56, 7);
-        ctx.fill();
-
-        // Windows
-        ctx.fillStyle = "#172d32";
-        ctx.beginPath();
-        ctx.roundRect(-10, -15, 20, 15, 4);
-        ctx.fill();
-
-        ctx.fillStyle = "#6eece3";
-        ctx.fillRect(-9, 18, 5, 4);
-        ctx.fillRect(4, 18, 5, 4);
-
-        if (player) {
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(-3, -25, 6, 3);
-        }
-
         ctx.restore();
     }
 
-    function drawRoad() {
-        // Natural asphalt with subtle texture and darker shoulders.
-        ctx.fillStyle = '#182522';
-        ctx.fillRect(0, 0, W, H);
-        const roadGradient = ctx.createLinearGradient(15, 0, W - 15, 0);
-        roadGradient.addColorStop(0, '#303638');
-        roadGradient.addColorStop(0.5, '#3b4041');
-        roadGradient.addColorStop(1, '#2b3234');
-        ctx.fillStyle = roadGradient;
-        ctx.fillRect(12, 0, W - 24, H);
-
-        // Asphalt texture specks, subtly scrolling with the road.
-        for (let i = 0; i < 42; i++) {
-            const x = 19 + ((i * 47) % (W - 38));
-            const y = ((i * 83 + roadOffset * (i % 2 ? 1 : -0.65)) % H + H) % H;
-            ctx.fillStyle = i % 3 ? '#ffffff09' : '#00000012';
-            ctx.fillRect(x, y, i % 4 === 0 ? 3 : 1, i % 4 === 0 ? 2 : 4);
+        function drawRoad() {
+        ctx.fillStyle='#27342d';ctx.fillRect(0,0,W,H);
+        // Sidewalks, curb stones and patterned paving on both sides
+        for(const side of [0,1]){
+          const sx=side===0?0:W-47;
+          ctx.fillStyle='#a9a99c';ctx.fillRect(sx,0,47,H);
+          ctx.fillStyle='#777d79';ctx.fillRect(side===0?43:0,0,4,H);
+          for(let y=-30+((roadOffset*.7)%30);y<H+30;y+=30){
+            ctx.strokeStyle='#565e5b';ctx.lineWidth=1;ctx.strokeRect(sx+3,y,40,27);
+            ctx.strokeStyle='#ffffff18';ctx.beginPath();ctx.moveTo(sx+5,y+3);ctx.lineTo(sx+38,y+3);ctx.stroke();
+          }
         }
-
-        // Shoulders and worn edge lines.
-        ctx.fillStyle = '#172b25';
-        ctx.fillRect(0, 0, 12, H);
-        ctx.fillRect(W - 12, 0, 12, H);
-        ctx.strokeStyle = '#d2d0b7';
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(13, 0); ctx.lineTo(13, H); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(W - 13, 0); ctx.lineTo(W - 13, H); ctx.stroke();
-
-        // Dashed lane dividers with worn, slightly muted paint.
-        ctx.strokeStyle = '#d7d9ce';
-        ctx.lineWidth = 2.4;
-        ctx.setLineDash([25, 25]);
-        ctx.lineDashOffset = -roadOffset;
-        for (let i = 1; i <= 2; i++) {
-            ctx.beginPath();
-            ctx.moveTo(i * laneW, 0);
-            ctx.lineTo(i * laneW, H);
-            ctx.stroke();
+        const roadLeft=47, roadWidth=W-94;
+        const roadGradient=ctx.createLinearGradient(roadLeft,0,roadLeft+roadWidth,0);
+        roadGradient.addColorStop(0,'#303536');roadGradient.addColorStop(.5,'#414647');roadGradient.addColorStop(1,'#303536');
+        ctx.fillStyle=roadGradient;ctx.fillRect(roadLeft,0,roadWidth,H);
+        // asphalt grain and moving cracked seams
+        for(let i=0;i<75;i++){
+          const x=52+((i*37)%(W-104)),y=((i*71+roadOffset*(i%2?1:.6))%H+H)%H;
+          ctx.fillStyle=i%3?'#ffffff0b':'#00000020';ctx.fillRect(x,y,i%4===0?3:1,i%4===0?2:4);
         }
+        ctx.strokeStyle='#171c1d';ctx.lineWidth=1.4;
+        for(let i=0;i<10;i++){
+          const x=55+((i*31)% (W-110)), y=((i*93+roadOffset*.45)%H+H)%H;
+          ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+5,y+6);ctx.lineTo(x+2,y+12);ctx.lineTo(x+10,y+18);ctx.stroke();
+          ctx.beginPath();ctx.moveTo(x+5,y+6);ctx.lineTo(x-3,y+9);ctx.stroke();
+        }
+        ctx.strokeStyle='#d2d0b7';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(48,0);ctx.lineTo(48,H);ctx.moveTo(W-48,0);ctx.lineTo(W-48,H);ctx.stroke();
+        ctx.strokeStyle='#d7d9ce';ctx.lineWidth=2;ctx.setLineDash([25,25]);ctx.lineDashOffset=-roadOffset;
+        for(let i=1;i<=2;i++){ctx.beginPath();ctx.moveTo(47+i*(roadWidth/3),0);ctx.lineTo(47+i*(roadWidth/3),H);ctx.stroke()}
         ctx.setLineDash([]);
-
-        // A faint road sheen keeps the asphalt from looking completely flat.
-        const sheen = ctx.createLinearGradient(0, 0, W, 0);
-        sheen.addColorStop(0, '#ffffff00');
-        sheen.addColorStop(0.48, '#ffffff08');
-        sheen.addColorStop(0.55, '#ffffff02');
-        sheen.addColorStop(1, '#ffffff00');
-        ctx.fillStyle = sheen;
-        ctx.fillRect(14, 0, W - 28, H);
+        // varied colorful pedestrians walking along sidewalks
+        for(let i=0;i<7;i++){
+          const y=((i*91+roadOffset*.8)% (H+45))-20;
+          for(const side of [0,1]){
+            const x=side===0?22:W-22, phase=animationClock*7+i*1.7+side;
+            ctx.save();ctx.translate(x,y);ctx.fillStyle='#0003';ctx.beginPath();ctx.ellipse(1,13,7,3,0,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle=['#f2c6a0','#d9a47d','#8b5d42','#e7c4a5'][i%4];ctx.beginPath();ctx.arc(0,-7,4.5,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle=['#ef476f','#118ab2','#ffd166','#06d6a0','#9b5de5','#f78c6b','#457b9d'][i];ctx.beginPath();ctx.roundRect(-5,-2,10,13,3);ctx.fill();
+            ctx.strokeStyle='#222';ctx.lineWidth=2.4;ctx.lineCap='round';const st=Math.sin(phase)*4;
+            ctx.beginPath();ctx.moveTo(-2,10);ctx.lineTo(-3-st,17);ctx.moveTo(2,10);ctx.lineTo(3+st,17);ctx.moveTo(-3,-1);ctx.lineTo(-7,5+st);ctx.moveTo(3,-1);ctx.lineTo(7,4-st);ctx.stroke();ctx.restore();
+          }
+        }
     }
 
-    function drawObstacle(o) {
+        function drawObstacle(o) {
         const visualLane = o.visualLane ?? o.lane;
-        const x = o.type === 'pedestrian' ? o.x : laneW * visualLane + laneW / 2;
+        const x = o.type === 'pedestrian' ? o.x : 47 + laneW * visualLane + laneW / 2;
         const y = o.y;
         if (o.type === 'pedestrian') {
             ctx.save(); ctx.fillStyle = "#f3f5ef";
@@ -965,9 +946,24 @@ async function askMONAI(message) {
     }
     function drawScene() {
         drawRoad();
+        if (gasActive || (score >= nextGasScore-190 && score < nextGasScore+310)) {
+          const gx=W-45,gy=105;ctx.save();
+          ctx.fillStyle='#eee9d4';ctx.fillRect(gx,gy,40,78);ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,40,17);
+          ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+20,gy+12);
+          ctx.fillStyle='#30464a';ctx.fillRect(gx+8,gy+26,24,30);ctx.fillStyle='#202629';ctx.fillRect(gx+15,gy+63,12,15);
+          if(gasActive){
+            const progress=Math.min(1,(performance.now()-refuelStart)/4000),ax=W-22-progress*83,ay=gy+47;
+            ctx.fillStyle='#efc5a0';ctx.beginPath();ctx.arc(ax,ay-15,5,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#087f8c';ctx.fillRect(ax-5,ay-10,10,13);ctx.strokeStyle='#efc5a0';ctx.lineWidth=2;
+            ctx.beginPath();ctx.moveTo(ax-2,ay+3);ctx.lineTo(ax-5,ay+10);ctx.moveTo(ax+2,ay+3);ctx.lineTo(ax+5,ay+10);ctx.stroke();
+            ctx.strokeStyle='#e9e9d5';ctx.beginPath();ctx.moveTo(ax-4,ay-4);ctx.lineTo(ax-17,ay);ctx.lineTo(ax-20,ay-7);ctx.stroke();
+            ctx.fillStyle='#fff';ctx.font='bold 9px Tahoma';ctx.fillText('در حال سوخت‌گیری',W/2,32);
+          }
+          ctx.restore();
+        }
         obstacles.forEach(drawObstacle);
         // subtle headlight glow around player
-        const px=laneW*playerLane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
+        const px=47+laneW*playerLane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
         const jumpProgress = bumpJumpTimer > 0 ? 1 - bumpJumpTimer / 0.62 : 1;
         const jumpHeight = bumpJumpTimer > 0 ? Math.sin(Math.max(0, jumpProgress) * Math.PI) * 17 : 0;
         drawCar(px,H-75-jumpHeight,'#20d6c5',true,steeringLean);
@@ -1059,7 +1055,7 @@ async function askMONAI(message) {
 
         if (!won) {
             // Show the impact animation first; reveal the retry overlay only afterwards.
-            const px = laneW * playerLane + laneW / 2;
+            const px = 47 + laneW * playerLane + laneW / 2;
             crashAnimation = { start: performance.now(), x: px, y: H - 75 };
             playTone(95, 0.22, "sawtooth", 0.07);
             playTone(180, 0.16, "triangle", 0.045);
@@ -1099,8 +1095,27 @@ async function askMONAI(message) {
         lastTime = time;
         animationClock += dt;
 
+        if (gasActive) {
+            if (performance.now() >= refuelUntil) {
+                gasActive=false;gasDeadline=null;nextGasScore+=2000;
+                prizeEl.textContent='⛽ باک پر شد! تا جایگاه بعدی ادامه بده.';playTone(900,.12,'triangle',.04);
+            } else { drawScene(); animationId=requestAnimationFrame(update); return; }
+        }
         score += dt * 40;
         scoreEl.textContent = Math.floor(score);
+        if (score >= nextGasScore && gasDeadline === null) {
+            if (lane === 0) {
+                gasActive=true;refuelStart=performance.now();refuelUntil=refuelStart+4000;
+                prizeEl.textContent='⛽ وارد جایگاه شدی؛ ۴ ثانیه سوخت‌گیری!';
+                playTone(650,.12,'triangle',.04);drawScene();animationId=requestAnimationFrame(update);return;
+            } else {
+                gasDeadline=score+300;
+                prizeEl.textContent='⚠️ جایگاه بنزین! به لاین چپ برو؛ فقط ۳۰۰ امتیاز فرصت داری.';
+            }
+        }
+        if (gasDeadline !== null && score >= gasDeadline) {
+            finishGame(false);titleEl.textContent='⛽ بنزین تمام شد!';messageEl.textContent='در امتیاز '+nextGasScore+' باید وارد جایگاه می‌شدی.';return;
+        }
 
         if (score >= 1000 && !registrationCheckpointShown) {
             registrationCheckpointShown = true;
@@ -1335,6 +1350,7 @@ async function askMONAI(message) {
         bumpSlowTimer = 0;
         bumpJumpTimer = 0;
         crashAnimation = null;
+        nextGasScore=2000;gasDeadline=null;gasActive=false;
         lastTime = performance.now();
         running = true;
 
