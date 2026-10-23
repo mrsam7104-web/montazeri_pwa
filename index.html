@@ -394,6 +394,13 @@ body::before{background:#13d8ef;top:8%;left:-110px}body::after{background:#087e8
 @media(max-width:520px){.contact-box#contactBox{right:14px;bottom:max(14px,env(safe-area-inset-bottom));width:min(320px,calc(100vw - 28px))}.contact-list#contactList{padding-inline:8px}}
 @media(prefers-reduced-motion:reduce){.contact-box#contactBox,.contact-toggle#contactToggle::before,.contact-number{animation:none!important;transition:none!important}}
 
+
+/* Customer account access */
+.account-panel{margin:14px 0 20px;padding:17px;border:1px solid #23646a;border-radius:17px;background:linear-gradient(145deg,#102b30,#0a151b);text-align:right}
+.account-panel h2{margin:0 0 7px;color:#20d6c5;font-size:17px}.account-panel p{font-size:12px;margin:0 0 12px;line-height:1.9}
+.account-actions{display:flex;gap:8px;flex-wrap:wrap}.account-actions button{flex:1;min-width:95px;padding:11px 12px;border:1px solid #24636b;border-radius:11px;background:#0d252c;color:#eaffff;font-weight:bold}
+.account-actions button:first-child{background:#20d6c5;color:#062322;border-color:#20d6c5}.account-actions button:disabled{opacity:.5}
+.account-state{font-size:12px!important;line-height:1.9;color:#c9e2e8;margin-top:10px!important;overflow-wrap:anywhere}.account-modal{position:fixed;inset:0;z-index:10010;background:#02080be8;backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:16px}.account-modal.open{display:flex}.account-box{width:min(440px,100%);padding:22px;border:1px solid #20d6c5;border-radius:20px;background:#101b22;color:#efffff;box-shadow:0 20px 70px #000b}.account-box h3{margin:0 0 12px;color:#20d6c5}.account-box label{display:block;margin:12px 0;font-size:12px;color:#c9e2e8}.account-box input{display:block;width:100%;margin-top:6px;padding:12px;border:1px solid #315354;border-radius:10px;background:#071317;color:#fff;font:inherit}.account-box .account-actions{margin-top:15px}.account-box .account-notice{font-size:12px;line-height:1.9;color:#a8ffcb;overflow-wrap:anywhere}.account-close{float:left;background:transparent;border:0;color:#fff;font-size:24px}
 </style>
 </head>
 
@@ -401,6 +408,15 @@ body::before{background:#13d8ef;top:8%;left:-110px}body::after{background:#087e8
 <main class="card">
 <img class="logo" src="/icon-192.png" alt="لوگوی صافکاری منتظری">
 <div id="customerCodeBadge" style="display:none;margin:8px auto 14px;padding:8px 14px;width:max-content;max-width:95%;border:1px solid #20d6c5;border-radius:12px;background:#06252a;color:#cafff8;font-size:12px">کد مشتری: <strong id="customerCodeValue" style="letter-spacing:1px"></strong></div>
+
+<section class="account-panel" aria-label="حساب مشتری">
+  <h2 id="accountHeading">حساب مشتری</h2>
+  <p id="accountDescription">برای نگهداری کد اختصاصی، شرکت در گردونه شانس و ماشین‌بازی و پیگیری خودرو، حساب بساز یا وارد حساب خودت شو.</p>
+  <div class="account-actions" id="accountLoggedOut"><button type="button" id="accountSignUp">ثبت‌نام (Sign up)</button><button type="button" id="accountSignIn">ورود (Sign in)</button></div>
+  <div class="account-actions" id="accountLoggedIn" hidden><button type="button" id="accountSignOut">خروج از حساب (Sign out)</button></div>
+  <p class="account-state" id="accountState" role="status" aria-live="polite">هنوز وارد حساب نشده‌ای.</p>
+</section>
+<div class="account-modal" id="accountModal" aria-hidden="true"><form class="account-box" id="accountForm"><button type="button" class="account-close" id="accountClose" aria-label="بستن">×</button><h3 id="accountModalTitle">ثبت‌نام مشتری</h3><div id="accountNameFields"><label>نام و نام خانوادگی<input id="accountFullName" maxlength="100" autocomplete="name" required placeholder="نام و نام خانوادگی"></label></div><label>شماره تلفن<input id="accountPhone" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" required placeholder="09xxxxxxxxx"></label><div id="accountCodeField" hidden><label>کد اختصاصی ۴ رقمی<input id="accountCode" type="text" inputmode="numeric" maxlength="4" pattern="[0-9۰-۹]{4}" autocomplete="one-time-code" placeholder="کد ۴ رقمی"></label></div><div class="account-actions"><button type="submit" id="accountSubmit">ادامه</button><button type="button" id="accountCancel">انصراف</button></div><p class="account-notice" id="accountNotice" role="status" aria-live="polite"></p></form></div>
 <p class="manager">با مدیریت محمود منتظری</p>
 <section class="hero-banner" aria-label="معرفی صافکاری منتظری">
   <span class="hero-eyebrow">✦ کیفیت، دقت و اعتماد</span>
@@ -1432,6 +1448,58 @@ function saveWheelCustomer(c){try{const old=JSON.parse(localStorage.getItem("mon
   }catch(err){console.error('Discount wheel:',err);status(err.message||'خطا در اتصال. چند لحظه بعد دوباره امتحان کن.','error')}
   finally{busy=false;if(!form.querySelector('input:disabled'))spinBtn.disabled=false}
  });
+})();
+</script>
+
+<script>
+(() => {
+ const KEY='montazeriCustomer';
+ const $=id=>document.getElementById(id);
+ const modal=$('accountModal'),form=$('accountForm'),notice=$('accountNotice');
+ let mode='signup',busy=false;
+ const digits=v=>String(v||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g,'');
+ const phoneNorm=v=>digits(v).replace(/^0098/,'0').replace(/^98/,'0');
+ function read(){try{return JSON.parse(localStorage.getItem(KEY)||'null')}catch(_){return null}}
+ function write(c){localStorage.setItem(KEY,JSON.stringify(c));window.dispatchEvent(new CustomEvent('montazeri-account-changed',{detail:c}));render(c)}
+ function render(c=read()){
+   const logged=!!(c&&c.customer_code&&c.phone);
+   $('accountLoggedOut').hidden=logged;$('accountLoggedIn').hidden=!logged;
+   $('accountHeading').textContent=logged?'حساب شما':'حساب مشتری';
+   $('accountDescription').textContent=logged?`خوش آمدی ${c.full_name||''}؛ کد اختصاصی‌ات برای گردونه شانس، ماشین‌بازی و پیگیری خودرو یکی است.`:'برای نگهداری کد اختصاصی، شرکت در گردونه شانس و ماشین‌بازی و پیگیری خودرو، حساب بساز یا وارد حساب خودت شو.';
+   $('accountState').textContent=logged?`وارد حساب هستی · شماره: ${c.phone} · کد اختصاصی: ${c.customer_code}`:'هنوز وارد حساب نشده‌ای.';
+   const badge=$('customerCodeBadge'),val=$('customerCodeValue');if(badge&&val&&logged){val.textContent=c.customer_code;badge.style.display='block'}else if(badge)badge.style.display='none';
+   const wheelName=$('wheelName'),wheelPhone=$('wheelPhone');if(logged&&wheelName&&wheelPhone){wheelName.value=c.full_name||'';wheelPhone.value=c.phone||'';wheelName.readOnly=true;wheelPhone.readOnly=true;}
+   const raceName=$('raceClaimName'),racePhone=$('raceClaimPhone');if(logged&&raceName&&racePhone){raceName.value=c.full_name||'';racePhone.value=c.phone||'';raceName.readOnly=true;racePhone.readOnly=true;}
+ }
+ function open(which){mode=which;form.reset();notice.textContent='';$('accountModalTitle').textContent=which==='signup'?'ثبت‌نام حساب مشتری':'ورود به حساب مشتری';$('accountNameFields').hidden=which!=='signup';$('accountFullName').required=which==='signup';$('accountCodeField').hidden=which!=='signin';$('accountCode').required=which==='signin';$('accountSubmit').textContent=which==='signup'?'ساخت حساب':'ورود';modal.classList.add('open');modal.setAttribute('aria-hidden','false')}
+ function close(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true')}
+ $('accountSignUp').onclick=()=>open('signup');$('accountSignIn').onclick=()=>open('signin');$('accountClose').onclick=$('accountCancel').onclick=close;
+ $('accountSignOut').onclick=()=>{localStorage.removeItem(KEY);render(null);$('accountState').textContent='از حساب خارج شدی.';const wheelForm=$('wheelForm');if(wheelForm){wheelForm.querySelectorAll('input').forEach(x=>{x.readOnly=false;x.value=''});$('wheelSpin').disabled=false}const raceForm=$('raceClaimForm');if(raceForm)raceForm.querySelectorAll('input').forEach(x=>{x.readOnly=false;x.value=''});};
+ modal.addEventListener('click',e=>{if(e.target===modal)close()});
+ form.addEventListener('submit',async e=>{
+   e.preventDefault();if(busy)return;busy=true;$('accountSubmit').disabled=true;notice.textContent='در حال بررسی…';
+   try{
+     if(!window.supabase||!window.MONT_SUPABASE_URL||!window.MONT_SUPABASE_ANON_KEY)throw new Error('اتصال پایگاه داده آماده نیست.');
+     const client=window.supabase.createClient(window.MONT_SUPABASE_URL,window.MONT_SUPABASE_ANON_KEY);
+     const phone=phoneNorm($('accountPhone').value);if(!/^09\d{9}$/.test(phone))throw new Error('شماره موبایل را با فرمت 09xxxxxxxxx وارد کن.');
+     if(mode==='signup'){
+       const full_name=$('accountFullName').value.trim();if(full_name.length<3)throw new Error('نام و نام خانوادگی را کامل وارد کن.');
+       const {data,error}=await client.rpc('register_site_customer',{p_full_name:full_name,p_phone:phone});if(error)throw error;
+       const r=Array.isArray(data)?data[0]:data;if(!r||!r.customer_code)throw new Error('کد اختصاصی از پایگاه داده دریافت نشد.');
+       write({full_name:r.full_name||full_name,phone:r.phone||phone,customer_code:String(r.customer_code)});
+       notice.textContent='حساب ساخته شد. کد ۴ رقمی خود را در جای امن نگه دار؛ برای ورود دوباره به آن و شماره تلفنت نیاز داری.';
+       $('accountState').textContent=`ثبت‌نام موفق بود. کد اختصاصی شما: ${r.customer_code} — آن را در جای امن نگه دار.`;
+       setTimeout(close,2200);
+     }else{
+       const code=digits($('accountCode').value);if(!/^\d{4}$/.test(code))throw new Error('کد اختصاصی باید ۴ رقمی باشد.');
+       const {data,error}=await client.from('site_customers').select('full_name,phone,customer_code').eq('phone',phone).eq('customer_code',code).maybeSingle();if(error)throw error;if(!data)throw new Error('شماره تلفن یا کد اختصاصی درست نیست.');
+       write({full_name:data.full_name||'',phone:phoneNorm(data.phone),customer_code:String(data.customer_code)});notice.textContent='ورود موفق بود.';setTimeout(close,700);
+     }
+   }catch(err){console.error('Account:',err);notice.textContent=err.message||'خطا در اتصال؛ دوباره تلاش کن.'}
+   finally{busy=false;$('accountSubmit').disabled=false}
+ });
+ window.addEventListener('montazeri-account-changed',e=>render(e.detail));
+ render();
 })();
 </script>
 

@@ -52,6 +52,7 @@
 <div class="modal" id="carModal"><div class="modalbox"><div class="modalhead"><h3 id="modalTitle">ثبت خودروی جدید</h3><button class="close" id="closeModal">×</button></div><form id="carForm"><input type="hidden" id="carId"><div class="formgrid">
 <div class="fieldbox full"><label>پلاک خودرو * (از راست به چپ: دو رقم، حرف، سه رقم، کد شهر)</label><div class="plate-parts" dir="ltr"><input class="field plate-part" id="plateTwo" inputmode="numeric" maxlength="2" placeholder="۱۲" aria-label="دو رقم اول" required><input class="field plate-part plate-letter" id="plateLetter" maxlength="1" placeholder="ب" aria-label="حرف پلاک" required><input class="field plate-part" id="plateThree" inputmode="numeric" maxlength="3" placeholder="۳۴۵" aria-label="سه رقم پلاک" required><input class="field plate-part" id="plateCity" inputmode="numeric" maxlength="2" placeholder="۶۷" aria-label="کد شهر" required></div><input type="hidden" id="plate"></div>
 <div class="fieldbox"><label for="phone">شماره تماس مشتری *</label><input class="field" id="phone" required type="tel" placeholder="09xxxxxxxxx"></div>
+<div class="fieldbox"><label for="customerFullName">نام و نام خانوادگی مشتری</label><input class="field" id="customerFullName" placeholder="برای اتصال به حساب مشتری"></div>
 <div class="fieldbox"><label for="model">مدل / نوع خودرو</label><input class="field" id="model" placeholder="مثلاً پژو ۲۰۶"></div>
 <div class="fieldbox full"><label>کد پیگیری مشتری (۴ رقمی)</label><div style="display:flex;gap:8px;align-items:center"><input class="field" id="trackingCode" readonly aria-label="کد پیگیری چهاررقمی" style="max-width:180px;text-align:center;font-size:22px;letter-spacing:5px;font-weight:bold;color:var(--cyan)"><button class="secondary" type="button" id="newTrackingCode">ساخت کد جدید</button></div><small class="sub">این کد را همراه پلاک به مشتری بده تا وضعیت خودرو را پیگیری کند.</small></div>
 
@@ -140,24 +141,37 @@ function renderDamage(){
  $('damageArea').querySelectorAll('[data-remove]').forEach(el=>el.onclick=()=>{damageDraft.splice(+el.dataset.remove,1);renderDamage()});
 }
 function makeTrackingCode(exceptId=null){let code;do{code=String(Math.floor(Math.random()*9000)+1000)}while(cars.some(c=>c.trackingCode===code&&c.id!==exceptId));return code}
+function normPhone(v){return String(v||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/\D/g,'').replace(/^0098/,'0').replace(/^98/,'0')}
+async function syncCustomerCodeFromPhone(showMessage=true){
+ const phone=normPhone($('phone').value);if(!/^09\d{9}$/.test(phone))return;
+ if(!sb){if(showMessage)toast('اتصال پایگاه داده مدیر آماده نیست');return}
+ try{
+  let {data,error}=await sb.from('site_customers').select('full_name,phone,customer_code').eq('phone',phone).maybeSingle();if(error)throw error;
+  if(!data){const full_name=$('customerFullName').value.trim();if(!full_name){if(showMessage)toast('این شماره حساب مشتری ندارد؛ نام و نام خانوادگی را وارد کن تا حساب ساخته شود.');return}
+   const result=await sb.rpc('register_site_customer',{p_full_name:full_name,p_phone:phone});if(result.error)throw result.error;data=Array.isArray(result.data)?result.data[0]:result.data;
+  }
+  if(data?.customer_code){$('trackingCode').value=String(data.customer_code);if(data.full_name)$('customerFullName').value=data.full_name;if(showMessage)toast('کد خودرو با کد اختصاصی مشتری یکسان شد: '+data.customer_code)}
+ }catch(e){console.error(e);if(showMessage)toast('دریافت کد مشتری ناموفق بود؛ اتصال یا مجوز جدول را بررسی کن')}
+}
+$('phone').addEventListener('blur',()=>syncCustomerCodeFromPhone(true));$('customerFullName').addEventListener('blur',()=>{if($('phone').value.trim())syncCustomerCodeFromPhone(false)});
 function plateNorm(s){return String(s||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[\s\-ـ]/g,'').toUpperCase()}
 function setPlateParts(value){const v=plateNorm(value);$('plateTwo').value=v.slice(0,2);$('plateLetter').value=v.slice(2,3);$('plateThree').value=v.slice(3,6);$('plateCity').value=v.slice(6,8);syncPlate()}
 function syncPlate(){ $('plate').value=plateNorm($('plateTwo').value)+plateNorm($('plateLetter').value)+plateNorm($('plateThree').value)+plateNorm($('plateCity').value); }
 for(const id of ['plateTwo','plateLetter','plateThree','plateCity'])$(id).addEventListener('input',()=>{syncPlate();const el=$(id);if(el.value.length>=el.maxLength){const ids=['plateTwo','plateLetter','plateThree','plateCity'],next=ids[ids.indexOf(id)+1];if(next)$(next).focus()}});
 function openModal(id=null){
  $('carForm').reset();$('carId').value=id||'';$('modalTitle').textContent=id?'ویرایش پرونده خودرو':'ثبت خودروی جدید';
- const c=cars.find(x=>x.id===id);if(c){for(const k of ['phone','model','received','color','notes'])$(k).value=c[k]||'';$('trackingCode').value=c.trackingCode||makeTrackingCode();setPlateParts(c.plate||'')}
- else {$('received').value=new Date().toISOString().slice(0,10);$('trackingCode').value=makeTrackingCode();setPlateParts('')}
+ const c=cars.find(x=>x.id===id);if(c){for(const k of ['phone','model','received','color','notes'])$(k).value=c[k]||'';$('customerFullName').value=c.full_name||'';$('trackingCode').value=c.trackingCode||makeTrackingCode();setPlateParts(c.plate||'')}
+ else {$('received').value=new Date().toISOString().slice(0,10);$('customerFullName').value='';$('trackingCode').value=makeTrackingCode();setPlateParts('')}
  $('carModal').classList.add('open');setTimeout(()=>$('plateTwo').focus(),80)
 }
 function closeModal(){$('carModal').classList.remove('open')}
-$('newTrackingCode').onclick=()=>{$('trackingCode').value=makeTrackingCode($('carId').value||null)};
+$('newTrackingCode').onclick=()=>{if(!$('phone').value.trim()){toast('اول شماره موبایل مشتری را وارد کن');return}syncCustomerCodeFromPhone(true)};
 $('carRows').addEventListener('click',e=>{const b=e.target.closest('.copy-code');if(b){navigator.clipboard?.writeText(b.dataset.code||'').then(()=>toast('کد پیگیری کپی شد')).catch(()=>toast('کد پیگیری: '+(b.dataset.code||'')));return}});
 $('selectedDetails').addEventListener('click',e=>{const b=e.target.closest('.copy-code');if(b){navigator.clipboard?.writeText(b.dataset.code||'').then(()=>toast('کد پیگیری کپی شد')).catch(()=>toast('کد پیگیری: '+(b.dataset.code||'')))}});
 $('newCarBtn').onclick=()=>openModal();$('closeModal').onclick=closeModal;$('cancelModal').onclick=closeModal;$('search').addEventListener('input',render);
-$('carForm').onsubmit=e=>{e.preventDefault();syncPlate();let id=$('carId').value,plate=$('plate').value.trim(),phone=$('phone').value.trim(),trackingCode=$('trackingCode').value.trim();if(!/^\d{2}[^\d]\d{5}$/.test(plate)||!phone||!/^\d{4}$/.test(trackingCode)){toast('پلاک را کامل کن و کد پیگیری چهاررقمی را بررسی کن');return}
+$('carForm').onsubmit=async e=>{e.preventDefault();syncPlate();let id=$('carId').value,plate=$('plate').value.trim(),phone=normPhone($('phone').value),trackingCode=$('trackingCode').value.trim();if(!/^\d{2}[^\d]\d{5}$/.test(plate)||!phone){toast('پلاک و شماره موبایل را کامل کن');return}if(!sb){toast('ابتدا اتصال مدیر به پایگاه داده را برقرار کن');return}await syncCustomerCodeFromPhone(false);trackingCode=$('trackingCode').value.trim();if(!/^\d{4}$/.test(trackingCode)){toast('برای این شماره، کد اختصاصی مشتری را ثبت یا بازیابی کن');return}
  if(cars.some(c=>c.plate.toLowerCase()===plate.toLowerCase()&&c.id!==id)){toast('این پلاک قبلاً ثبت شده است');return}
- const fields={plate,phone,trackingCode,model:$('model').value.trim(),received:$('received').value,color:$('color').value.trim(),notes:$('notes').value.trim()};
+ const fields={plate,phone,trackingCode,full_name:$('customerFullName').value.trim(),model:$('model').value.trim(),received:$('received').value,color:$('color').value.trim(),notes:$('notes').value.trim()};
  if(id){Object.assign(cars.find(c=>c.id===id),fields);toast('پرونده ویرایش شد')}
  else{let c={...fields,id:Date.now().toString(),stage:0,damages:[]};cars.unshift(c);selectedId=c.id;toast('خودرو با موفقیت ثبت شد')}
  closeModal();save()};
