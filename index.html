@@ -754,7 +754,7 @@ async function askMONAI(message) {
     let bumpSlowTimer = 0;
     let bumpJumpTimer = 0;
     let crashAnimation = null;
-    let nextGasScore = 2000, gasDeadline = null, gasActive = false, refuelUntil = 0, refuelStart = 0;
+    let nextGasScore = 1000, gasDeadline = null, gasActive = false, refuelUntil = 0, refuelStart = 0;
 
     try {
         best = Number(localStorage.getItem("montazeriRaceBest")) || 0;
@@ -1097,7 +1097,7 @@ async function askMONAI(message) {
 
         if (gasActive) {
             if (performance.now() >= refuelUntil) {
-                gasActive=false;gasDeadline=null;nextGasScore+=2000;
+                gasActive=false;gasDeadline=null;nextGasScore+=1000;
                 prizeEl.textContent='⛽ باک پر شد! تا جایگاه بعدی ادامه بده.';playTone(900,.12,'triangle',.04);
             } else { drawScene(); animationId=requestAnimationFrame(update); return; }
         }
@@ -1350,7 +1350,7 @@ async function askMONAI(message) {
         bumpSlowTimer = 0;
         bumpJumpTimer = 0;
         crashAnimation = null;
-        nextGasScore=2000;gasDeadline=null;gasActive=false;
+        nextGasScore=1000;gasDeadline=null;gasActive=false;
         lastTime = performance.now();
         running = true;
 
