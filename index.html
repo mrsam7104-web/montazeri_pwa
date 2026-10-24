@@ -754,7 +754,7 @@ async function askMONAI(message) {
     let bumpSlowTimer = 0;
     let bumpJumpTimer = 0;
     let crashAnimation = null;
-    let nextGasScore = 1000, gasDeadline = null, gasActive = false, refuelUntil = 0, refuelStart = 0, resumeSlowTimer = 0;
+    let nextGasScore = 1000, gasDeadline = null, gasActive = false, gasObject = null, gasClearTimer = 0, refuelUntil = 0, refuelStart = 0, resumeSlowTimer = 0;
 
     try {
         best = Number(localStorage.getItem("montazeriRaceBest")) || 0;
@@ -941,38 +941,36 @@ async function askMONAI(message) {
     }
     function drawScene() {
         drawRoad();
-        // Fixed gas station: it stays in the same place on screen and never scrolls with the road.
-        const gx=47+laneW/2-17, gy=H-176;
-        ctx.save();
-        ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(gx+19,gy+67,24,8,0,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle='#e9e5d5';ctx.fillRect(gx,gy,34,66);
-        ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,34,15);
-        ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+17,gy+11);
-        ctx.fillStyle='#243a40';ctx.fillRect(gx+6,gy+23,22,20);
-        ctx.fillStyle='#55e6d2';ctx.fillRect(gx+9,gy+26,16,7);
-        ctx.fillStyle='#202629';ctx.fillRect(gx+12,gy+48,10,18);
-        ctx.strokeStyle='#171d20';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+47,gy+30,gx+42,gy+55,gx+29,gy+52);ctx.stroke();
-        if(gasActive){
-          const progress=Math.min(1,(performance.now()-refuelStart)/4000);
-          const px=47+laneW*playerLane+laneW/2, py=H-75;
-          const walk=Math.min(1,progress/0.9), ax=(gx+34)+(px-31-(gx+34))*walk, ay=py-6;
-          ctx.fillStyle='#efc5a0';ctx.beginPath();ctx.arc(ax,ay-18,5,0,Math.PI*2);ctx.fill();
-          ctx.fillStyle='#087f8c';ctx.fillRect(ax-5,ay-13,10,14);
-          ctx.strokeStyle='#efc5a0';ctx.lineWidth=2;ctx.beginPath();
-          ctx.moveTo(ax-2,ay+1);ctx.lineTo(ax-5,ay+8);ctx.moveTo(ax+2,ay+1);ctx.lineTo(ax+5,ay+8);
-          ctx.moveTo(ax+3,ay-8);ctx.lineTo(px-13,py+1);ctx.stroke();
-          if(progress>0.9){ctx.strokeStyle='#e9e9d5';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+54,gy+32,px-23,py-5,px-13,py-2);ctx.stroke();}
-          ctx.fillStyle='#fff';ctx.font='bold 9px Tahoma';ctx.fillText('در حال سوخت‌گیری',W/2,32);
-          ctx.fillStyle='#ffffffcc';ctx.fillRect(W/2-42,40,84,5);ctx.fillStyle='#20d6c5';ctx.fillRect(W/2-42,40,84*progress,5);
-        }
-        ctx.restore();
-        // Clear the road completely during refuelling; only the stationary station and player remain.
-        if (!gasActive) {
-          const crossing=obstacles.find(o=>o.type==='pedestrian' && o.y>-35 && o.y<H+35);
-          if(crossing){
-            ctx.fillStyle='#f3f5ef';
-            for(let i=-3;i<=3;i++)ctx.fillRect(54,crossing.y+i*7-2,W-108,4);
+        // Gas station is a road object that scrolls toward the player, like other obstacles.
+        if (gasObject) {
+          const gx=47+laneW*gasObject.lane+laneW/2-17;
+          const gy=gasActive ? H-125 : gasObject.y-33;
+          ctx.save();
+          ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(gx+17,gy+64,23,7,0,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='#e9e5d5';ctx.fillRect(gx,gy,34,62);
+          ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,34,15);
+          ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+17,gy+11);
+          ctx.fillStyle='#243a40';ctx.fillRect(gx+6,gy+22,22,19);
+          ctx.fillStyle='#55e6d2';ctx.fillRect(gx+9,gy+25,16,7);
+          ctx.fillStyle='#202629';ctx.fillRect(gx+12,gy+45,10,17);
+          ctx.strokeStyle='#171d20';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx+29,gy+28);ctx.bezierCurveTo(gx+47,gy+29,gx+42,gy+53,gx+29,gy+50);ctx.stroke();
+          if(gasActive){
+            const progress=Math.min(1,(performance.now()-refuelStart)/4000);
+            const px=47+laneW*playerLane+laneW/2, py=H-75;
+            const ax=px-25, ay=py-6;
+            ctx.fillStyle='#efc5a0';ctx.beginPath();ctx.arc(ax,ay-18,5,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#087f8c';ctx.fillRect(ax-5,ay-13,10,14);
+            ctx.strokeStyle='#efc5a0';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ax+3,ay-8);ctx.lineTo(px-13,py+1);ctx.stroke();
+            ctx.strokeStyle='#e9e9d5';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+54,gy+32,px-23,py-5,px-13,py-2);ctx.stroke();
+            ctx.fillStyle='#fff';ctx.font='bold 9px Tahoma';ctx.fillText('در حال سوخت‌گیری',W/2,32);
+            ctx.fillStyle='#ffffffcc';ctx.fillRect(W/2-42,40,84,5);ctx.fillStyle='#20d6c5';ctx.fillRect(W/2-42,40,84*progress,5);
           }
+          ctx.restore();
+        }
+        // During refuelling and the 3-second departure window, no hazards are drawn.
+        if (!gasActive && gasClearTimer <= 0) {
+          const crossing=obstacles.find(o=>o.type==='pedestrian' && o.y>-35 && o.y<H+35);
+          if(crossing){ctx.fillStyle='#f3f5ef';for(let i=-3;i<=3;i++)ctx.fillRect(54,crossing.y+i*7-2,W-108,4);}
           obstacles.forEach(drawObstacle);
         }
         const px=47+laneW*playerLane+laneW/2;
@@ -1110,24 +1108,23 @@ async function askMONAI(message) {
 
         if (gasActive) {
             if (performance.now() >= refuelUntil) {
-                gasActive=false;gasDeadline=null;nextGasScore+=1000;resumeSlowTimer=1.35;
-                prizeEl.textContent='⛽ باک پر شد! تا جایگاه بعدی ادامه بده.';playTone(900,.12,'triangle',.04);
+                gasActive=false;gasClearTimer=3;resumeSlowTimer=1.35;
+                prizeEl.textContent='⛽ باک پر شد! جایگاه تا ۳ ثانیه دیگر خارج می‌شود.';playTone(900,.12,'triangle',.04);
             } else { drawScene(); animationId=requestAnimationFrame(update); return; }
         }
         score += dt * 40;
         scoreEl.textContent = Math.floor(score);
-        if (score >= nextGasScore && gasDeadline === null) {
-            if (lane === 0) {
-                gasActive=true;obstacles=[];spawnTimer=0;refuelStart=performance.now();refuelUntil=refuelStart+4000;
-                prizeEl.textContent='⛽ وارد جایگاه شدی؛ ۴ ثانیه سوخت‌گیری!';
-                playTone(650,.12,'triangle',.04);drawScene();animationId=requestAnimationFrame(update);return;
-            } else {
-                gasDeadline=score+300;
-                prizeEl.textContent='⚠️ جایگاه بنزین! به لاین چپ برو؛ فقط ۳۰۰ امتیاز فرصت داری.';
-            }
+
+        // After refuelling, keep the road clear for 3 seconds, then remove the station.
+        if (gasClearTimer > 0) {
+            gasClearTimer=Math.max(0,gasClearTimer-dt);
+            if(gasClearTimer===0){gasObject=null;nextGasScore+=1000;spawnTimer=0;prizeEl.textContent='🚗 مسیر دوباره باز شد!';}
         }
-        if (gasDeadline !== null && score >= gasDeadline) {
-            finishGame(false);titleEl.textContent='⛽ بنزین تمام شد!';messageEl.textContent='در امتیاز '+nextGasScore+' باید وارد جایگاه می‌شدی.';return;
+        // Spawn a gas-station object every 1000 points (1000, 2000, 3000...).
+        if (!gasObject && gasClearTimer<=0 && score >= nextGasScore) {
+            obstacles=[];spawnTimer=0;gasDeadline=null;
+            gasObject={type:'gas',lane:Math.floor(Math.random()*3),y:-70};
+            prizeEl.textContent='⛽ جایگاه بنزین جلوتر است؛ وارد لاین جایگاه شو!';
         }
 
         if (score >= 1000 && !registrationCheckpointShown) {
@@ -1161,9 +1158,20 @@ async function askMONAI(message) {
         const resumeFactor = resumeSlowTimer > 0 ? 0.32 + 0.68 * (1 - resumeSlowTimer / 1.35) : 1;
         const speed = baseSpeed * (bumpSlowTimer > 0 ? 0.48 : resumeFactor);
         roadOffset = (roadOffset + speed * dt) % 50;
+        if (gasObject && !gasActive && gasClearTimer<=0) gasObject.y += speed * dt;
+        if (gasObject && !gasActive && gasClearTimer<=0 && Math.abs(gasObject.y-(H-75))<48) {
+            const playerY=H-75, playerX=47+laneW*playerLane+laneW/2;
+            const gasX=47+laneW*gasObject.lane+laneW/2;
+            if (Math.abs(gasX-playerX)<laneW*0.42 && Math.abs(gasObject.y-playerY)<48) {
+                gasActive=true;obstacles=[];spawnTimer=0;gasObject.y=playerY;refuelStart=performance.now();refuelUntil=refuelStart+4000;
+                prizeEl.textContent='⛽ وارد جایگاه شدی؛ ۴ ثانیه سوخت‌گیری!';playTone(650,.12,'triangle',.04);drawScene();animationId=requestAnimationFrame(update);return;
+            }
+        }
+        if (gasObject && !gasActive && gasClearTimer<=0 && gasObject.y > H-75+55) {finishGame(false);titleEl.textContent='⛽ جایگاه رو از دست دادی!';messageEl.textContent='برای ادامه باید وارد لاین جایگاه بنزین می‌شدی.';return;
+        }
 
         // Spawn exactly one speed bump at 400, 800, 1200 points, and every 400 thereafter.
-        if (score >= nextBumpScore) {
+        if (!gasObject && gasClearTimer<=0 && score >= nextBumpScore) {
             obstacles.push({type:'bump', lane:1, visualLane:1, y:-18, triggered:false});
             nextBumpScore += 400;
         }
@@ -1178,7 +1186,7 @@ async function askMONAI(message) {
         const spawnInterval = Math.max(0.40, 0.91 - score / 5000);
         const enoughSpacing = obstacles.length === 0 || obstacles[obstacles.length - 1].y > 145;
 
-        if (spawnTimer >= spawnInterval && enoughSpacing) {
+        if (!gasObject && gasClearTimer<=0 && spawnTimer >= spawnInterval && enoughSpacing) {
             spawnTimer = 0;
             let newLane = Math.floor(Math.random() * 3);
             // Reduce back-to-back blockers in the same lane.
@@ -1223,7 +1231,7 @@ async function askMONAI(message) {
             }
         }
 
-        obstacles.forEach(o => {
+        if (!gasObject && gasClearTimer<=0 && !gasActive) obstacles.forEach(o => {
             o.y += speed * dt;
             if (o.turnSignal) {
                 o.indicatorSoundTimer = (o.indicatorSoundTimer || 0) + dt;
@@ -1251,7 +1259,7 @@ async function askMONAI(message) {
         const playerY = H - 75;
         const playerX = 47 + laneW * playerLane + laneW / 2;
 
-        for (const o of obstacles) {
+        for (const o of (gasObject || gasClearTimer>0 || gasActive ? [] : obstacles)) {
             if (o.type === 'bump') {
                 if (!o.triggered && Math.abs(o.y - playerY) < 15) {
                     o.triggered = true;
@@ -1272,7 +1280,7 @@ async function askMONAI(message) {
             }
         }
 
-        obstacles = obstacles.filter(o => o.y < H + 45 && !o.finished);
+        if (!gasObject && gasClearTimer<=0 && !gasActive) obstacles = obstacles.filter(o => o.y < H + 45 && !o.finished);
 
         // Save best score
         if (Math.floor(score) > best) {
@@ -1376,7 +1384,7 @@ async function askMONAI(message) {
         bumpSlowTimer = 0;
         bumpJumpTimer = 0;
         crashAnimation = null;
-        nextGasScore=1000;gasDeadline=null;gasActive=false;refuelUntil=0;refuelStart=0;resumeSlowTimer=0;
+        nextGasScore=1000;gasDeadline=null;gasActive=false;gasObject=null;gasClearTimer=0;refuelUntil=0;refuelStart=0;resumeSlowTimer=0;
         lastTime = performance.now();
         running = true;
 
