@@ -941,19 +941,27 @@ async function askMONAI(message) {
     }
     function drawScene() {
         drawRoad();
-        // Gas station is a road object that scrolls toward the player, like other obstacles.
+        // The gas-station zone is a single road object spanning all three lanes.
+        // It scrolls toward the player, then stays in place for refuelling and the 3-second clear window.
         if (gasObject) {
-          const gx=47+laneW*gasObject.lane+laneW/2-17;
-          const gy=gasActive ? H-125 : gasObject.y-33;
+          const gy = (gasActive || gasClearTimer > 0) ? H-125 : gasObject.y-33;
           ctx.save();
-          ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(gx+17,gy+64,23,7,0,0,Math.PI*2);ctx.fill();
-          ctx.fillStyle='#e9e5d5';ctx.fillRect(gx,gy,34,62);
-          ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,34,15);
-          ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+17,gy+11);
-          ctx.fillStyle='#243a40';ctx.fillRect(gx+6,gy+22,22,19);
-          ctx.fillStyle='#55e6d2';ctx.fillRect(gx+9,gy+25,16,7);
-          ctx.fillStyle='#202629';ctx.fillRect(gx+12,gy+45,10,17);
-          ctx.strokeStyle='#171d20';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx+29,gy+28);ctx.bezierCurveTo(gx+47,gy+29,gx+42,gy+53,gx+29,gy+50);ctx.stroke();
+          // A broad marked service bay makes the object visible and enterable from any lane.
+          ctx.fillStyle = '#0c2228'; ctx.globalAlpha = 0.88;
+          ctx.fillRect(49, gy-7, W-98, 76); ctx.globalAlpha = 1;
+          ctx.strokeStyle = '#20d6c5'; ctx.lineWidth = 3; ctx.setLineDash([10,6]);
+          ctx.strokeRect(53, gy-3, W-106, 68); ctx.setLineDash([]);
+          for (let gl=0; gl<3; gl++) {
+            const gx=47+laneW*gl+laneW/2-17;
+            ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(gx+17,gy+64,23,7,0,0,Math.PI*2);ctx.fill();
+            ctx.fillStyle='#e9e5d5';ctx.fillRect(gx,gy,34,62);
+            ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,34,15);
+            ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+17,gy+11);
+            ctx.fillStyle='#243a40';ctx.fillRect(gx+6,gy+22,22,19);
+            ctx.fillStyle='#55e6d2';ctx.fillRect(gx+9,gy+25,16,7);
+            ctx.fillStyle='#202629';ctx.fillRect(gx+12,gy+45,10,17);
+            ctx.strokeStyle='#171d20';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx+29,gy+28);ctx.bezierCurveTo(gx+47,gy+29,gx+42,gy+53,gx+29,gy+50);ctx.stroke();
+          }
           if(gasActive){
             const progress=Math.min(1,(performance.now()-refuelStart)/4000);
             const px=47+laneW*playerLane+laneW/2, py=H-75;
@@ -961,6 +969,7 @@ async function askMONAI(message) {
             ctx.fillStyle='#efc5a0';ctx.beginPath();ctx.arc(ax,ay-18,5,0,Math.PI*2);ctx.fill();
             ctx.fillStyle='#087f8c';ctx.fillRect(ax-5,ay-13,10,14);
             ctx.strokeStyle='#efc5a0';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ax+3,ay-8);ctx.lineTo(px-13,py+1);ctx.stroke();
+            const gx=47+laneW*playerLane+laneW/2-17;
             ctx.strokeStyle='#e9e9d5';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+54,gy+32,px-23,py-5,px-13,py-2);ctx.stroke();
             ctx.fillStyle='#fff';ctx.font='bold 9px Tahoma';ctx.fillText('در حال سوخت‌گیری',W/2,32);
             ctx.fillStyle='#ffffffcc';ctx.fillRect(W/2-42,40,84,5);ctx.fillStyle='#20d6c5';ctx.fillRect(W/2-42,40,84*progress,5);
@@ -1123,7 +1132,7 @@ async function askMONAI(message) {
         // Spawn a gas-station object every 1000 points (1000, 2000, 3000...).
         if (!gasObject && gasClearTimer<=0 && score >= nextGasScore) {
             obstacles=[];spawnTimer=0;gasDeadline=null;
-            gasObject={type:'gas',lane:Math.floor(Math.random()*3),y:-70};
+            gasObject={type:'gas',lane:'all',y:-70};
             prizeEl.textContent='⛽ جایگاه بنزین جلوتر است؛ وارد لاین جایگاه شو!';
         }
 
@@ -1159,15 +1168,10 @@ async function askMONAI(message) {
         const speed = baseSpeed * (bumpSlowTimer > 0 ? 0.48 : resumeFactor);
         roadOffset = (roadOffset + speed * dt) % 50;
         if (gasObject && !gasActive && gasClearTimer<=0) gasObject.y += speed * dt;
+        // The service bay spans all three lanes, so entering it never depends on lane choice.
         if (gasObject && !gasActive && gasClearTimer<=0 && Math.abs(gasObject.y-(H-75))<48) {
-            const playerY=H-75, playerX=47+laneW*playerLane+laneW/2;
-            const gasX=47+laneW*gasObject.lane+laneW/2;
-            if (Math.abs(gasX-playerX)<laneW*0.42 && Math.abs(gasObject.y-playerY)<48) {
-                gasActive=true;obstacles=[];spawnTimer=0;gasObject.y=playerY;refuelStart=performance.now();refuelUntil=refuelStart+4000;
-                prizeEl.textContent='⛽ وارد جایگاه شدی؛ ۴ ثانیه سوخت‌گیری!';playTone(650,.12,'triangle',.04);drawScene();animationId=requestAnimationFrame(update);return;
-            }
-        }
-        if (gasObject && !gasActive && gasClearTimer<=0 && gasObject.y > H-75+55) {finishGame(false);titleEl.textContent='⛽ جایگاه رو از دست دادی!';messageEl.textContent='برای ادامه باید وارد لاین جایگاه بنزین می‌شدی.';return;
+            gasActive=true;obstacles=[];spawnTimer=0;gasObject.y=H-75;refuelStart=performance.now();refuelUntil=refuelStart+4000;
+            prizeEl.textContent='⛽ وارد جایگاه شدی؛ ۴ ثانیه سوخت‌گیری!';playTone(650,.12,'triangle',.04);drawScene();animationId=requestAnimationFrame(update);return;
         }
 
         // Spawn exactly one speed bump at 400, 800, 1200 points, and every 400 thereafter.
