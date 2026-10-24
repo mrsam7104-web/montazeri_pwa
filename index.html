@@ -856,8 +856,8 @@ async function askMONAI(message) {
         for(let i=1;i<=2;i++){ctx.beginPath();ctx.moveTo(47+i*(roadWidth/3),0);ctx.lineTo(47+i*(roadWidth/3),H);ctx.stroke()}
         ctx.setLineDash([]);
         // varied colorful pedestrians walking along sidewalks
-        for(let i=0;i<7;i++){
-          const y=((i*91+roadOffset*.8)% (H+45))-20;
+        for(let i=0;i<3;i++){
+          const y=((i*157+roadOffset*.8)% (H+45))-20;
           for(const side of [0,1]){
             const x=side===0?22:W-22, phase=animationClock*7+i*1.7+side;
             ctx.save();ctx.translate(x,y);ctx.fillStyle='#0003';ctx.beginPath();ctx.ellipse(1,13,7,3,0,0,Math.PI*2);ctx.fill();
@@ -873,11 +873,6 @@ async function askMONAI(message) {
         const visualLane = o.visualLane ?? o.lane;
         const x = o.type === 'pedestrian' ? o.x : 47 + laneW * visualLane + laneW / 2;
         const y = o.y;
-        if (o.type === 'pedestrian') {
-            ctx.save(); ctx.fillStyle = "#f3f5ef";
-            for (let i = -3; i <= 3; i++) ctx.fillRect(18, y + i * 7 - 2, W - 36, 4);
-            ctx.restore();
-        }
         ctx.save();
         ctx.translate(x, y);
         if (o.type === 'bump') {
@@ -946,39 +941,42 @@ async function askMONAI(message) {
     }
     function drawScene() {
         drawRoad();
-        if (gasActive || (score >= nextGasScore-190 && score < nextGasScore+310)) {
-          // The fuel pump is placed inside the left road lane, never on the sidewalk.
-          const gx=47+laneW/2-17, gy=H-176;
-          ctx.save();
-          ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(gx+19,gy+67,24,8,0,0,Math.PI*2);ctx.fill();
-          ctx.fillStyle='#e9e5d5';ctx.fillRect(gx,gy,34,66);
-          ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,34,15);
-          ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+17,gy+11);
-          ctx.fillStyle='#243a40';ctx.fillRect(gx+6,gy+23,22,20);
-          ctx.fillStyle='#55e6d2';ctx.fillRect(gx+9,gy+26,16,7);
-          ctx.fillStyle='#202629';ctx.fillRect(gx+12,gy+48,10,18);
-          ctx.strokeStyle='#171d20';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+47,gy+30,gx+42,gy+55,gx+29,gy+52);ctx.stroke();
-          if(gasActive){
-            const progress=Math.min(1,(performance.now()-refuelStart)/4000);
-            const px=47+laneW*playerLane+laneW/2, py=H-75;
-            // Attendant walks from the pump to the stopped car, then fuels it.
-            const walk=Math.min(1,progress/0.9), ax=(gx+34)+(px-31-(gx+34))*walk, ay=py-6;
-            ctx.fillStyle='#efc5a0';ctx.beginPath();ctx.arc(ax,ay-18,5,0,Math.PI*2);ctx.fill();
-            ctx.fillStyle='#087f8c';ctx.fillRect(ax-5,ay-13,10,14);
-            ctx.strokeStyle='#efc5a0';ctx.lineWidth=2;ctx.beginPath();
-            ctx.moveTo(ax-2,ay+1);ctx.lineTo(ax-5,ay+8);ctx.moveTo(ax+2,ay+1);ctx.lineTo(ax+5,ay+8);
-            ctx.moveTo(ax+3,ay-8);ctx.lineTo(px-13,py+1);ctx.stroke();
-            if(progress>0.9){
-              ctx.strokeStyle='#e9e9d5';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+54,gy+32,px-23,py-5,px-13,py-2);ctx.stroke();
-            }
-            ctx.fillStyle='#fff';ctx.font='bold 9px Tahoma';ctx.fillText(progress<0.25?'متصدی در حال نزدیک شدن':'در حال سوخت‌گیری',W/2,32);
-            ctx.fillStyle='#ffffffcc';ctx.fillRect(W/2-42,40,84,5);ctx.fillStyle='#20d6c5';ctx.fillRect(W/2-42,40,84*progress,5);
-          }
-          ctx.restore();
+        // Fixed gas station: it stays in the same place on screen and never scrolls with the road.
+        const gx=47+laneW/2-17, gy=H-176;
+        ctx.save();
+        ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(gx+19,gy+67,24,8,0,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#e9e5d5';ctx.fillRect(gx,gy,34,66);
+        ctx.fillStyle='#c92f42';ctx.fillRect(gx,gy,34,15);
+        ctx.fillStyle='#fff';ctx.font='bold 8px Tahoma';ctx.textAlign='center';ctx.fillText('GAS',gx+17,gy+11);
+        ctx.fillStyle='#243a40';ctx.fillRect(gx+6,gy+23,22,20);
+        ctx.fillStyle='#55e6d2';ctx.fillRect(gx+9,gy+26,16,7);
+        ctx.fillStyle='#202629';ctx.fillRect(gx+12,gy+48,10,18);
+        ctx.strokeStyle='#171d20';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+47,gy+30,gx+42,gy+55,gx+29,gy+52);ctx.stroke();
+        if(gasActive){
+          const progress=Math.min(1,(performance.now()-refuelStart)/4000);
+          const px=47+laneW*playerLane+laneW/2, py=H-75;
+          const walk=Math.min(1,progress/0.9), ax=(gx+34)+(px-31-(gx+34))*walk, ay=py-6;
+          ctx.fillStyle='#efc5a0';ctx.beginPath();ctx.arc(ax,ay-18,5,0,Math.PI*2);ctx.fill();
+          ctx.fillStyle='#087f8c';ctx.fillRect(ax-5,ay-13,10,14);
+          ctx.strokeStyle='#efc5a0';ctx.lineWidth=2;ctx.beginPath();
+          ctx.moveTo(ax-2,ay+1);ctx.lineTo(ax-5,ay+8);ctx.moveTo(ax+2,ay+1);ctx.lineTo(ax+5,ay+8);
+          ctx.moveTo(ax+3,ay-8);ctx.lineTo(px-13,py+1);ctx.stroke();
+          if(progress>0.9){ctx.strokeStyle='#e9e9d5';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(gx+29,gy+29);ctx.bezierCurveTo(gx+54,gy+32,px-23,py-5,px-13,py-2);ctx.stroke();}
+          ctx.fillStyle='#fff';ctx.font='bold 9px Tahoma';ctx.fillText('در حال سوخت‌گیری',W/2,32);
+          ctx.fillStyle='#ffffffcc';ctx.fillRect(W/2-42,40,84,5);ctx.fillStyle='#20d6c5';ctx.fillRect(W/2-42,40,84*progress,5);
         }
-        obstacles.forEach(drawObstacle);
-        // subtle headlight glow around player
-        const px=47+laneW*playerLane+laneW/2;const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
+        ctx.restore();
+        // Clear the road completely during refuelling; only the stationary station and player remain.
+        if (!gasActive) {
+          const crossing=obstacles.find(o=>o.type==='pedestrian' && o.y>-35 && o.y<H+35);
+          if(crossing){
+            ctx.fillStyle='#f3f5ef';
+            for(let i=-3;i<=3;i++)ctx.fillRect(54,crossing.y+i*7-2,W-108,4);
+          }
+          obstacles.forEach(drawObstacle);
+        }
+        const px=47+laneW*playerLane+laneW/2;
+        const glow=ctx.createRadialGradient(px,H-75,2,px,H-75,62);glow.addColorStop(0,'#20d6c526');glow.addColorStop(1,'#20d6c500');ctx.fillStyle=glow;ctx.fillRect(px-62,H-137,124,124);
         const jumpProgress = bumpJumpTimer > 0 ? 1 - bumpJumpTimer / 0.62 : 1;
         const jumpHeight = bumpJumpTimer > 0 ? Math.sin(Math.max(0, jumpProgress) * Math.PI) * 17 : 0;
         drawCar(px,H-75-jumpHeight,'#20d6c5',true,steeringLean);
@@ -1120,7 +1118,7 @@ async function askMONAI(message) {
         scoreEl.textContent = Math.floor(score);
         if (score >= nextGasScore && gasDeadline === null) {
             if (lane === 0) {
-                gasActive=true;refuelStart=performance.now();refuelUntil=refuelStart+4000;
+                gasActive=true;obstacles=[];spawnTimer=0;refuelStart=performance.now();refuelUntil=refuelStart+4000;
                 prizeEl.textContent='⛽ وارد جایگاه شدی؛ ۴ ثانیه سوخت‌گیری!';
                 playTone(650,.12,'triangle',.04);drawScene();animationId=requestAnimationFrame(update);return;
             } else {
@@ -1190,7 +1188,7 @@ async function askMONAI(message) {
                 newLane = alternatives[Math.floor(Math.random() * alternatives.length)];
             }
             const roll=Math.random();
-            const type=roll<0.22?'truck':roll<0.45?'motor':roll<0.65?'pedestrian':'car';
+            const type=roll<0.25?'truck':roll<0.52?'motor':'car';
             const obstacle = {lane:newLane,visualLane:newLane,y:-60,type,color:({truck:'#e9b84b',motor:'#f0a3ff',pedestrian:'#ff6688',car:'#8b83f6'})[type],lampPhase:Math.random()*Math.PI*2,walkPhase:Math.random()*Math.PI*2,changeProgress:0};
             // After 1500 points, some cars signal and glide into an adjacent lane.
             if (score >= 1500 && type === 'car' && Math.random() < 0.34) {
@@ -1210,7 +1208,19 @@ async function askMONAI(message) {
                 obstacle.walkPhase = Math.random() * Math.PI * 2;
             }
             obstacles.push(obstacle);
-            if(type==='pedestrian') playTone(720,.045,'triangle',.012);
+            // Random pedestrian groups: 1, 2, 3 or 4 people cross together on a marked crossing.
+            if (Math.random() < 0.19 && score > 250) {
+                const count = 1 + Math.floor(Math.random() * 4);
+                const fromLeft = Math.random() < 0.5;
+                const direction = fromLeft ? 1 : -1;
+                const startX = fromLeft ? 20 : W - 20;
+                const crossingY = -35;
+                for (let n=0; n<count; n++) {
+                    obstacles.push({type:'pedestrian',lane:1,y:crossingY-n*23,x:startX-direction*n*23, crossDirection:direction,
+                      color:['#ef476f','#118ab2','#ffd166','#06d6a0','#9b5de5','#f78c6b'][Math.floor(Math.random()*6)],
+                      walkPhase:Math.random()*Math.PI*2, groupId:Math.random()});
+                }
+            }
         }
 
         obstacles.forEach(o => {
@@ -1233,14 +1243,13 @@ async function askMONAI(message) {
             }
             if (o.type === 'pedestrian') {
                 o.x += o.crossDirection * (105 + Math.min(score * 0.025, 35)) * dt;
-                if (o.x < 22) { o.x = 22; o.crossDirection = 1; }
-                if (o.x > W - 22) { o.x = W - 22; o.crossDirection = -1; }
+                if (o.x < -18 || o.x > W + 18) o.finished = true;
             }
         });
 
         // Collision detection
         const playerY = H - 75;
-        const playerX = laneW * playerLane + laneW / 2;
+        const playerX = 47 + laneW * playerLane + laneW / 2;
 
         for (const o of obstacles) {
             if (o.type === 'bump') {
@@ -1252,18 +1261,18 @@ async function askMONAI(message) {
                 }
                 continue;
             }
-            const obstacleX = o.type === 'pedestrian' ? o.x : laneW * (o.visualLane ?? o.lane) + laneW / 2;
-            const hit = Math.abs(obstacleX - playerX) < (o.type === 'pedestrian' ? 25 : 22);
+            const obstacleX = o.type === 'pedestrian' ? o.x : 47 + laneW * (o.visualLane ?? o.lane) + laneW / 2;
+            const hit = Math.abs(obstacleX - playerX) < (o.type === 'pedestrian' ? 13 : 22);
             if (
                 hit &&
-                Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?32:37)
+                Math.abs(o.y - playerY) < (o.type==='truck'?42:o.type==='pedestrian'?24:37)
             ) {
                 finishGame(false);
                 return;
             }
         }
 
-        obstacles = obstacles.filter(o => o.y < H + 45);
+        obstacles = obstacles.filter(o => o.y < H + 45 && !o.finished);
 
         // Save best score
         if (Math.floor(score) > best) {
@@ -1367,7 +1376,7 @@ async function askMONAI(message) {
         bumpSlowTimer = 0;
         bumpJumpTimer = 0;
         crashAnimation = null;
-        nextGasScore=1000;gasDeadline=null;gasActive=false;resumeSlowTimer=0;
+        nextGasScore=1000;gasDeadline=null;gasActive=false;refuelUntil=0;refuelStart=0;resumeSlowTimer=0;
         lastTime = performance.now();
         running = true;
 
